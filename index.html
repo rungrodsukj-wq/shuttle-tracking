@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ติดตามรถรับส่งอพาร์ทเมนท์</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; } /* แผนที่เต็มจอ */
+        .info-box {
+            position: absolute; bottom: 20px; left: 10px; right: 10px;
+            background: white; padding: 10px; border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index: 1000;
+            text-align: center; font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div class="info-box">
+        <strong>สถานะรถรับส่ง</strong><br>
+        <span id="van1-status">🚐 รถคันที่ 1: กำลังค้นหา...</span><br>
+        </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // 1. วางค่า Config ของคุณตรงนี้ (ชุดเดิม)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
+            authDomain: "my-apartment-shuttle.firebaseapp.com",
+            databaseURL: "https://my-apartment-shuttle-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-apartment-shuttle",
+            storageBucket: "my-apartment-shuttle.firebasestorage.app",
+            messagingSenderId: "808566202899",
+            appId: "1:808566202899:web:5626ae23c0df6335d455e6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. ตั้งค่าแผนที่ (พิกัดเริ่มต้น: อนุสาวรีย์ชัยฯ - เปลี่ยนเป็นพิกัดหอพักคุณได้เลย)
+        const map = L.map('map').setView([13.7649, 100.5383], 15);
+
+        // ใช้แผนที่ฟรีจาก OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // สร้างตัวแปรเก็บ Marker รถ
+        let van1Marker = null;
+
+        // ไอคอนรถตู้ (ใช้รูปฟรีจากเน็ต หรือเปลี่ยน url ได้)
+        const vanIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3066/3066259.png', // รูปไอคอนรถ
+            iconSize: [40, 40], 
+            iconAnchor: [20, 20]
+        });
+
+        // 3. ฟังข้อมูลจาก Firebase (Realtime!)
+        db.ref('shuttles/van1').on('value', (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data && data.active) {
+                // ถ้ามีข้อมูลและรถ Active
+                const lat = data.lat;
+                const lng = data.lng;
+
+                // ถ้ายังไม่มี Marker ให้สร้างใหม่
+                if (!van1Marker) {
+                    van1Marker = L.marker([lat, lng], {icon: vanIcon}).addTo(map)
+                        .bindPopup("รถคันที่ 1 อยู่ตรงนี้");
+                } else {
+                    // ถ้ามีแล้ว ให้ย้ายตำแหน่ง (Slide)
+                    van1Marker.setLatLng([lat, lng]);
+                }
+                
+                // อัปเดตข้อความ
+                document.getElementById('van1-status').innerText = "🚐 รถคันที่ 1: กำลังวิ่ง";
+                document.getElementById('van1-status').style.color = "green";
+                
+                // ขยับแผนที่ตามรถ (Optional: ถ้าไม่อยากให้แผนที่ขยับตามตลอดให้ลบบรรทัดนี้)
+                map.panTo([lat, lng]);
+
+            } else {
+                // ถ้ารถหยุดวิ่ง
+                 document.getElementById('van1-status').innerText = "🚐 รถคันที่ 1: จอด/ออฟไลน์";
+                 document.getElementById('van1-status').style.color = "red";
+            }
+        });
+    </script>
+</body>
+</html>
