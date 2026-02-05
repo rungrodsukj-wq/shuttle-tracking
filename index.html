@@ -1,41 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-    <title>ติดตามรถรับส่งอพาร์ทเมนท์</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Shuttle Tracker - ระบบติดตามรถรับส่ง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
     
     <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; } /* แผนที่เต็มจอ */
-        .info-box {
-            position: absolute; bottom: 20px; left: 10px; right: 10px;
-            background: white; padding: 10px; border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index: 1000;
-            text-align: center; font-family: sans-serif;
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #dc2626;
+            --bg-glass: rgba(255, 255, 255, 0.9);
         }
+
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Kanit', sans-serif; 
+            background-color: #f0f2f5;
+        }
+
+        #map { 
+            height: 100vh; 
+            width: 100%; 
+            z-index: 1;
+        }
+
+        /* กล่องควบคุมหลัก */
+        .main-ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        /* ส่วนของปุ่ม */
+        .bus-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-bus {
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-bus:active { transform: scale(0.95); }
+
+        .btn-v1 { background: var(--primary-color); }
+        .btn-v2 { background: var(--secondary-color); }
+
+        .status-text {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        /* ไฟกระพริบสถานะ */
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            display: inline-block;
+            margin-right: 5px;
+            box-shadow: 0 0 0 rgba(74, 222, 128, 0.4);
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
+        .offline-dot {
+            background: #94a3b8;
+            animation: none;
+        }
+
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
-    <div class="info-box">
-        <strong>สถานะรถรับส่ง</strong><br>
-        <button onclick="focusVan('van1')">📍 คันที่ 1</button>
-        <button onclick="focusVan('van2')">📍 คันที่ 2</button>
-        <hr>
-        <span id="van1-status">🚐 รถคันที่ 1: รอข้อมูล...</span><br>
-        <span id="van2-status">🚐 รถคันที่ 2: รอข้อมูล...</span>
+    <div class="main-ui">
+        <div class="header">
+            <h2>🚐 ระบบติดตามรถรับส่ง</h2>
+        </div>
+        
+        <div class="bus-controls">
+            <button class="btn-bus btn-v1" onclick="focusVan('van1')">
+                <span>📍 ติดตามคันที่ 1</span>
+                <div id="van1-badge" class="status-text">
+                    <span class="pulse offline-dot"></span> <span id="van1-status-text">ปิดเครื่อง</span>
+                </div>
+            </button>
+
+            <button class="btn-bus btn-v2" onclick="focusVan('van2')">
+                <span>📍 ติดตามคันที่ 2</span>
+                <div id="van2-badge" class="status-text">
+                    <span class="pulse offline-dot"></span> <span id="van2-status-text">ปิดเครื่อง</span>
+                </div>
+            </button>
+        </div>
     </div>
 
+    <div id="map"></div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // 1. วางค่า Config ของคุณตรงนี้ (ชุดเดิม)
+        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -49,35 +161,47 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. ตั้งค่าแผนที่ (พิกัดเริ่มต้น: อนุสาวรีย์ชัยฯ - เปลี่ยนเป็นพิกัดหอพักคุณได้เลย)
-        // --- ส่วนตั้งค่าเบื้องต้น ---
-        const map = L.map('map').setView([13.7649, 100.5383], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // --- 2. INITIALIZE MAP ---
+        const map = L.map('map', {
+            zoomControl: false // ซ่อนปุ่มซูมเพื่อความสะอาด
+        }).setView([13.7649, 100.5383], 15);
 
-        // ตัวแปรเก็บข้อมูลของรถแต่ละคัน
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
         const vans = {
-            van1: { marker: null, path: L.polyline([], {color: 'blue'}).addTo(map), statusId: 'van1-status' },
-            van2: { marker: null, path: L.polyline([], {color: 'red'}).addTo(map), statusId: 'van2-status' }
+            van1: { 
+                marker: null, 
+                path: L.polyline([], {color: '#2563eb', weight: 4, opacity: 0.6}).addTo(map),
+                statusId: 'van1-status-text',
+                badgeId: 'van1-badge'
+            },
+            van2: { 
+                marker: null, 
+                path: L.polyline([], {color: '#dc2626', weight: 4, opacity: 0.6}).addTo(map),
+                statusId: 'van2-status-text',
+                badgeId: 'van2-badge'
+            }
         };
 
         const vanIcon = L.icon({
             iconUrl: 'https://cdn-icons-png.flaticon.com/512/3066/3066259.png',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
+            iconSize: [35, 35],
+            iconAnchor: [17, 17]
         });
 
-        // ฟังก์ชันเลื่อนหน้าจอไปที่รถ
+        // --- 3. FUNCTIONS ---
         function focusVan(id) {
             const v = vans[id];
             if (v.marker) {
-                map.panTo(v.marker.getLatLng());
+                map.flyTo(v.marker.getLatLng(), 17, { duration: 1.5 });
                 v.marker.openPopup();
             } else {
                 alert("ยังไม่พบตำแหน่งรถคันนี้ครับ");
             }
         }
 
-        // --- ฟังก์ชันจัดการข้อมูลจาก Firebase ---
         function trackShuttle(id) {
             db.ref('shuttles/' + id).on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -85,45 +209,38 @@
 
                 const pos = [data.lat, data.lng];
                 const v = vans[id];
+                const statusLabel = document.getElementById(v.statusId);
+                const badge = document.getElementById(v.badgeId);
 
                 if (data.active) {
-                    // 1. จัดการ Marker
                     if (!v.marker) {
-                        v.marker = L.marker(pos, {icon: vanIcon}).addTo(map).bindPopup("รถคันที่ " + (id === 'van1' ? '1' : '2'));
+                        v.marker = L.marker(pos, {icon: vanIcon}).addTo(map).bindPopup("<b>รถคันที่ " + (id === 'van1' ? '1' : '2') + "</b><br>กำลังวิ่งอยู่บนถนน");
                     } else {
                         v.marker.setLatLng(pos);
                     }
-
-                    // 2. จัดการเส้นทาง (Polyline)
                     v.path.addLatLng(pos);
-
-                    // 3. อัปเดต UI
-                    document.getElementById(v.statusId).innerText = `🚐 รถคันที่ ${id.slice(-1)}: กำลังวิ่ง`;
-                    document.getElementById(v.statusId).style.color = "green";
+                    
+                    statusLabel.innerText = "กำลังวิ่ง";
+                    badge.querySelector('.pulse').classList.remove('offline-dot');
                 } else {
-                    document.getElementById(v.statusId).innerText = `🚐 รถคันที่ ${id.slice(-1)}: จอด/ออฟไลน์`;
-                    document.getElementById(v.statusId).style.color = "red";
+                    statusLabel.innerText = "ปิดเครื่อง";
+                    badge.querySelector('.pulse').classList.add('offline-dot');
                 }
             });
         }
 
-        // เริ่มติดตามทั้ง 2 คัน
+        // เริ่มต้นการติดตาม
         trackShuttle('van1');
         trackShuttle('van2');
 
-        // --- ระบบล้างเส้นทางทุกครึ่งชั่วโมง ---
+        // ระบบล้างเส้นทางทุกครึ่งชั่วโมง
         setInterval(() => {
             const now = new Date();
-            const mins = now.getMinutes();
-            const secs = now.getSeconds();
-
-            // เช็คว่าตอนนี้คือนาทีที่ 00 หรือ 30 (และวินาทีที่ 0 เพื่อให้ทำงานครั้งเดียว)
-            if ((mins === 0 || mins === 30) && secs === 0) {
-                console.log("ล้างเส้นทางตามเวลา...");
+            if ((now.getMinutes() === 0 || now.getMinutes() === 30) && now.getSeconds() === 0) {
                 vans.van1.path.setLatLngs([]);
                 vans.van2.path.setLatLngs([]);
             }
-        }, 1000); // เช็คทุกวินาที
+        }, 1000);
     </script>
 </body>
 </html>
