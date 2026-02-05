@@ -22,8 +22,12 @@
     <div id="map"></div>
     <div class="info-box">
         <strong>สถานะรถรับส่ง</strong><br>
-        <span id="van1-status">🚐 รถคันที่ 1: กำลังค้นหา...</span><br>
-        </div>
+        <button onclick="focusVan('van1')">📍 คันที่ 1</button>
+        <button onclick="focusVan('van2')">📍 คันที่ 2</button>
+        <hr>
+        <span id="van1-status">🚐 รถคันที่ 1: รอข้อมูล...</span><br>
+        <span id="van2-status">🚐 รถคันที่ 2: รอข้อมูล...</span>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -46,54 +50,80 @@
         const db = firebase.database();
 
         // 2. ตั้งค่าแผนที่ (พิกัดเริ่มต้น: อนุสาวรีย์ชัยฯ - เปลี่ยนเป็นพิกัดหอพักคุณได้เลย)
+        // --- ส่วนตั้งค่าเบื้องต้น ---
         const map = L.map('map').setView([13.7649, 100.5383], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // ใช้แผนที่ฟรีจาก OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        // ตัวแปรเก็บข้อมูลของรถแต่ละคัน
+        const vans = {
+            van1: { marker: null, path: L.polyline([], {color: 'blue'}).addTo(map), statusId: 'van1-status' },
+            van2: { marker: null, path: L.polyline([], {color: 'red'}).addTo(map), statusId: 'van2-status' }
+        };
 
-        // สร้างตัวแปรเก็บ Marker รถ
-        let van1Marker = null;
-
-        // ไอคอนรถตู้ (ใช้รูปฟรีจากเน็ต หรือเปลี่ยน url ได้)
         const vanIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3066/3066259.png', // รูปไอคอนรถ
-            iconSize: [40, 40], 
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3066/3066259.png',
+            iconSize: [40, 40],
             iconAnchor: [20, 20]
         });
 
-        // 3. ฟังข้อมูลจาก Firebase (Realtime!)
-        db.ref('shuttles/van1').on('value', (snapshot) => {
-            const data = snapshot.val();
-            
-            if (data && data.active) {
-                // ถ้ามีข้อมูลและรถ Active
-                const lat = data.lat;
-                const lng = data.lng;
-
-                // ถ้ายังไม่มี Marker ให้สร้างใหม่
-                if (!van1Marker) {
-                    van1Marker = L.marker([lat, lng], {icon: vanIcon}).addTo(map)
-                        .bindPopup("รถคันที่ 1 อยู่ตรงนี้");
-                } else {
-                    // ถ้ามีแล้ว ให้ย้ายตำแหน่ง (Slide)
-                    van1Marker.setLatLng([lat, lng]);
-                }
-                
-                // อัปเดตข้อความ
-                document.getElementById('van1-status').innerText = "🚐 รถคันที่ 1: กำลังวิ่ง";
-                document.getElementById('van1-status').style.color = "green";
-                
-                // ขยับแผนที่ตามรถ (Optional: ถ้าไม่อยากให้แผนที่ขยับตามตลอดให้ลบบรรทัดนี้)
-                map.panTo([lat, lng]);
-
+        // ฟังก์ชันเลื่อนหน้าจอไปที่รถ
+        function focusVan(id) {
+            const v = vans[id];
+            if (v.marker) {
+                map.panTo(v.marker.getLatLng());
+                v.marker.openPopup();
             } else {
-                // ถ้ารถหยุดวิ่ง
-                 document.getElementById('van1-status').innerText = "🚐 รถคันที่ 1: จอด/ออฟไลน์";
-                 document.getElementById('van1-status').style.color = "red";
+                alert("ยังไม่พบตำแหน่งรถคันนี้ครับ");
             }
-        });
+        }
+
+        // --- ฟังก์ชันจัดการข้อมูลจาก Firebase ---
+        function trackShuttle(id) {
+            db.ref('shuttles/' + id).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                const pos = [data.lat, data.lng];
+                const v = vans[id];
+
+                if (data.active) {
+                    // 1. จัดการ Marker
+                    if (!v.marker) {
+                        v.marker = L.marker(pos, {icon: vanIcon}).addTo(map).bindPopup("รถคันที่ " + (id === 'van1' ? '1' : '2'));
+                    } else {
+                        v.marker.setLatLng(pos);
+                    }
+
+                    // 2. จัดการเส้นทาง (Polyline)
+                    v.path.addLatLng(pos);
+
+                    // 3. อัปเดต UI
+                    document.getElementById(v.statusId).innerText = `🚐 รถคันที่ ${id.slice(-1)}: กำลังวิ่ง`;
+                    document.getElementById(v.statusId).style.color = "green";
+                } else {
+                    document.getElementById(v.statusId).innerText = `🚐 รถคันที่ ${id.slice(-1)}: จอด/ออฟไลน์`;
+                    document.getElementById(v.statusId).style.color = "red";
+                }
+            });
+        }
+
+        // เริ่มติดตามทั้ง 2 คัน
+        trackShuttle('van1');
+        trackShuttle('van2');
+
+        // --- ระบบล้างเส้นทางทุกครึ่งชั่วโมง ---
+        setInterval(() => {
+            const now = new Date();
+            const mins = now.getMinutes();
+            const secs = now.getSeconds();
+
+            // เช็คว่าตอนนี้คือนาทีที่ 00 หรือ 30 (และวินาทีที่ 0 เพื่อให้ทำงานครั้งเดียว)
+            if ((mins === 0 || mins === 30) && secs === 0) {
+                console.log("ล้างเส้นทางตามเวลา...");
+                vans.van1.path.setLatLngs([]);
+                vans.van2.path.setLatLngs([]);
+            }
+        }, 1000); // เช็คทุกวินาที
     </script>
 </body>
 </html>
