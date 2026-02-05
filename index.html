@@ -6,102 +6,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #dc2626;
-            --bg-glass: rgba(255, 255, 255, 0.9);
+            --primary: #2563eb;
+            --secondary: #db2777;
+            --glass: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
 
-        body { 
-            margin: 0; padding: 0; 
-            font-family: 'Kanit', sans-serif; 
-            background-color: #f0f2f5;
-        }
-
+        body { margin: 0; padding: 0; font-family: 'Kanit', sans-serif; background-color: #f0f2f5; overflow: hidden; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* กล่องควบคุมหลัก */
-        .main-ui {
-            position: absolute; top: 20px; left: 50%;
-            transform: translateX(-50%); width: 90%; max-width: 400px;
-            background: var(--bg-glass); backdrop-filter: blur(10px);
-            padding: 15px; border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 1000;
-            border: 1px solid rgba(255,255,255,0.3);
+        /* --- UI PANEL แบบใหม่ พับเก็บได้ --- */
+        .ui-panel {
+            position: absolute;
+            top: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.5);
         }
 
-        .header { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
-        .header h2 { margin: 0; font-size: 1.1rem; color: #1e293b; }
-
-        .bus-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        .btn-bus {
-            border: none; padding: 12px; border-radius: 12px; color: white;
-            font-family: 'Kanit', sans-serif; font-weight: 500; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center;
-            transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* ส่วนหัว (คลิกเพื่อพับ/ขยายได้) */
+        .panel-header {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.5);
         }
-        .btn-bus:active { transform: scale(0.95); }
-        .btn-v1 { background: var(--primary-color); }
-        .btn-v2 { background: var(--secondary-color); }
 
-        .status-text { font-size: 0.75rem; margin-top: 4px; opacity: 0.9; }
+        .panel-header h3 { margin: 0; font-size: 1rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        
+        /* ปุ่มลูกศรหมุนได้ */
+        .toggle-icon { transition: transform 0.3s ease; opacity: 0.6; }
+        .ui-panel.collapsed .toggle-icon { transform: rotate(180deg); }
 
-        .pulse {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #4ade80; display: inline-block; margin-right: 5px;
-            box-shadow: 0 0 0 rgba(74, 222, 128, 0.4);
-            animation: pulse-animation 2s infinite;
+        /* ส่วนเนื้อหาปุ่มกด */
+        .panel-content {
+            padding: 0 15px 15px 15px;
+            max-height: 200px; /* ค่าสูงพอประมาณ */
+            opacity: 1;
+            transition: all 0.3s ease;
         }
-        @keyframes pulse-animation {
-            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
-        }
-        .offline-dot { background: #94a3b8; animation: none; }
 
-        /* สไตล์สำหรับป้ายชื่อสถานี */
+        /* เมื่อพับเก็บ ให้ซ่อนเนื้อหา */
+        .ui-panel.collapsed .panel-content {
+            max-height: 0;
+            padding-bottom: 0;
+            opacity: 0;
+        }
+
+        /* Grid ปุ่มกด */
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+        .btn-track {
+            border: none; padding: 10px; border-radius: 12px;
+            color: white; cursor: pointer; text-align: left;
+            position: relative; overflow: hidden;
+            transition: transform 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between;
+            min-height: 70px;
+        }
+        .btn-track:active { transform: scale(0.96); }
+
+        .btn-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-pink { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+        .car-name { font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .status-badge { 
+            font-size: 0.75rem; background: rgba(0,0,0,0.2); 
+            padding: 2px 8px; border-radius: 10px; 
+            display: inline-flex; align-items: center; width: fit-content; margin-top: 5px;
+        }
+
+        /* ไฟสถานะ */
+        .led { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; background: #ccc; }
+        .led.on { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+        .led.off { background: #94a3b8; }
+
+        /* ป้ายชื่อสถานีบนแผนที่ */
         .station-label {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-family: 'Kanit', sans-serif;
-            font-size: 12px;
-            font-weight: 500;
-            color: #333;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            white-space: nowrap;
+            background: white; border: 1px solid #e2e8f0; border-radius: 4px;
+            padding: 2px 6px; font-family: 'Kanit'; font-size: 11px; font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; color: #334155;
         }
-        /* เอาลูกศรชี้ของ tooltip ออกเพื่อให้ดูสะอาดตา (ถ้าชอบให้ลบส่วนนี้ออก) */
         .leaflet-tooltip-top:before { display: none; }
 
     </style>
 </head>
 <body>
 
-    <div class="main-ui">
-        <div class="header">
-            <h2>🚐 ระบบติดตามรถรับส่ง</h2>
+    <div class="ui-panel" id="mainPanel">
+        <div class="panel-header" onclick="togglePanel()">
+            <h3>🚐 ติดตามรถรับส่ง <span style="font-size:0.8em; color:#64748b; font-weight:400;">(แตะเพื่อย่อ/ขยาย)</span></h3>
+            <svg class="toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 15l-6-6-6 6"/> </svg>
         </div>
         
-        <div class="bus-controls">
-            <button class="btn-bus btn-v1" onclick="focusVan('van1')">
-                <span>📍 ติดตามคันที่ 1</span>
-                <div id="van1-badge" class="status-text">
-                    <span class="pulse offline-dot"></span> <span id="van1-status-text">ปิดเครื่อง</span>
-                </div>
-            </button>
+        <div class="panel-content">
+            <div class="control-grid">
+                <button class="btn-track btn-blue" onclick="focusVan('van1')">
+                    <div class="car-name">🚍 คันที่ 1 (ฟ้า)</div>
+                    <div class="status-badge">
+                        <span class="led off" id="led-van1"></span>
+                        <span id="status-van1">รอสัญญาณ...</span>
+                    </div>
+                </button>
 
-            <button class="btn-bus btn-v2" onclick="focusVan('van2')">
-                <span>📍 ติดตามคันที่ 2</span>
-                <div id="van2-badge" class="status-text">
-                    <span class="pulse offline-dot"></span> <span id="van2-status-text">ปิดเครื่อง</span>
-                </div>
-            </button>
+                <button class="btn-track btn-pink" onclick="focusVan('van2')">
+                    <div class="car-name">🚍 คันที่ 2 (ชมพู)</div>
+                    <div class="status-badge">
+                        <span class="led off" id="led-van2"></span>
+                        <span id="status-van2">รอสัญญาณ...</span>
+                    </div>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -112,7 +140,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // --- 1. CONFIGURATION ---
+        // 1. Config Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -122,21 +150,22 @@
             messagingSenderId: "808566202899",
             appId: "1:808566202899:web:5626ae23c0df6335d455e6"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- 2. INITIALIZE MAP ---
-        const map = L.map('map', {
-            zoomControl: false 
-        }).setView([13.801307528476485, 100.31184859685465], 15);//13.801307528476485, 100.31184859685465
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
+        // 2. Map Setup
+        const map = L.map('map', { zoomControl: false }).setView([13.801307528476485, 100.31184859685465], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: 'OpenStreetMap'
         }).addTo(map);
 
-        // --- ส่วนตั้งค่าจุดจอด 14 จุด (แก้พิกัดตรงนี้) ---
-        // ใส่พิกัดจริงของคุณลงใน lat, lng ได้เลยครับ
+        // 3. ฟังก์ชัน UI พับเก็บ
+        function togglePanel() {
+            const panel = document.getElementById('mainPanel');
+            panel.classList.toggle('collapsed');
+        }
+
+        // 4. จุดจอด 14 จุด (ไม่มีเส้นเชื่อมแล้ว)
         const stations = [
             { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },//13.801307528476485, 100.31184859685465
             { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
@@ -156,90 +185,63 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
         ];
 
-        // วนลูปสร้างจุดจอดบนแผนที่
-        stations.forEach(station => {
-            L.marker([station.lat, station.lng])
-             .addTo(map)
-             .bindTooltip(station.name, { 
-                 permanent: true,   // โชว์ข้อความตลอดเวลา ไม่ต้องคลิก
-                 direction: 'top',  // ให้ข้อความอยู่ด้านบนจุด
-                 className: 'station-label', // เรียกใช้สไตล์ที่เราแต่งไว้
-                 offset: [0, -10]   // ขยับข้อความขึ้นไปนิดหน่อย
-             });
+        // วาดจุดจอดอย่างเดียว
+        stations.forEach(s => {
+            L.marker([s.lat, s.lng]).addTo(map)
+             .bindTooltip(s.name, { permanent: true, direction: 'top', className: 'station-label', offset: [0, -10] });
         });
-        // ---------------------------------------------
+
+        // 5. ระบบติดตามรถ
+        const iconBlue = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png?ga=GA1.1.1656679989.1770308490', iconSize: [40, 40], iconAnchor: [20, 20] });
+        const iconPink = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386456.png?ga=GA1.1.1656679989.1770308490', iconSize: [40, 40], iconAnchor: [20, 20] });
 
         const vans = {
-            van1: { 
-                marker: null, 
-                path: L.polyline([], {color: '#2563eb', weight: 4, opacity: 0.6}).addTo(map),
-                statusId: 'van1-status-text',
-                badgeId: 'van1-badge'
-            },
-            van2: { 
-                marker: null, 
-                path: L.polyline([], {color: '#dc2626', weight: 4, opacity: 0.6}).addTo(map),
-                statusId: 'van2-status-text',
-                badgeId: 'van2-badge'
-            }
+            van1: { marker: null, icon: iconBlue, path: L.polyline([], {color: '#2563eb', weight: 5}).addTo(map) },
+            van2: { marker: null, icon: iconPink, path: L.polyline([], {color: '#db2777', weight: 5}).addTo(map) }
         };
 
-        const vanIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3066/3066259.png',
-            iconSize: [35, 35],
-            iconAnchor: [17, 17]
-        });
-
-        // --- 3. FUNCTIONS ---
         function focusVan(id) {
-            const v = vans[id];
-            if (v.marker) {
-                map.flyTo(v.marker.getLatLng(), 17, { duration: 1.5 });
-                v.marker.openPopup();
+            if (vans[id].marker) {
+                map.flyTo(vans[id].marker.getLatLng(), 16, {duration: 1.5});
+                // vans[id].marker.openPopup();
+                // ถ้า Panel เปิดอยู่ ให้พับเก็บอัตโนมัติเพื่อให้เห็นแผนที่ชัดๆ
+                document.getElementById('mainPanel').classList.add('collapsed');
             } else {
-                alert("ยังไม่พบตำแหน่งรถคันนี้ครับ");
+                alert("รถคันนี้ยังไม่ส่งสัญญาณครับ");
             }
         }
 
         function trackShuttle(id) {
-            db.ref('shuttles/' + id).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (!data) return;
-
-                const pos = [data.lat, data.lng];
+            db.ref('shuttles/' + id).on('value', (snap) => {
+                const data = snap.val();
+                const elStatus = document.getElementById(`status-${id}`);
+                const elLed = document.getElementById(`led-${id}`);
                 const v = vans[id];
-                const statusLabel = document.getElementById(v.statusId);
-                const badge = document.getElementById(v.badgeId);
 
-                if (data.active) {
-                    if (!v.marker) {
-                        v.marker = L.marker(pos, {icon: vanIcon}).addTo(map).bindPopup("<b>รถคันที่ " + (id === 'van1' ? '1' : '2'));
-                    } else {
-                        v.marker.setLatLng(pos);
-                    }
+                if (data && data.active) {
+                    const pos = [data.lat, data.lng];
+                    if (!v.marker) v.marker = L.marker(pos, {icon: v.icon}).addTo(map).bindPopup(`<b>${id}</b>`);
+                    else v.marker.setLatLng(pos);
                     v.path.addLatLng(pos);
-                    
-                    statusLabel.innerText = "กำลังวิ่ง";
-                    badge.querySelector('.pulse').classList.remove('offline-dot');
+
+                    elStatus.innerText = "Online";
+                    elLed.className = "led on";
                 } else {
-                    statusLabel.innerText = "ปิดเครื่อง";
-                    badge.querySelector('.pulse').classList.add('offline-dot');
+                    elStatus.innerText = "Offline";
+                    elLed.className = "led off";
                 }
             });
         }
 
-        // เริ่มต้นการติดตาม
         trackShuttle('van1');
         trackShuttle('van2');
 
-        // ระบบล้างเส้นทางทุกครึ่งชั่วโมง
+        // เคลียร์เส้น Realtime ทุก 30 นาที
         setInterval(() => {
-            const now = new Date();
-            if ((now.getMinutes() === 0 || now.getMinutes() === 30) && now.getSeconds() === 0) {
-                vans.van1.path.setLatLngs([]);
-                vans.van2.path.setLatLngs([]);
-            }
-        }, 1000);
+            const m = new Date().getMinutes();
+            if (m === 0 || m === 30) { vans.van1.path.setLatLngs([]); vans.van2.path.setLatLngs([]); }
+        }, 60000);
+
     </script>
 </body>
 </html>
