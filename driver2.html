@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>คนขับรถ - ส่งพิกัด</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        button { padding: 15px 30px; font-size: 20px; margin: 10px; cursor: pointer; }
+        #status { margin-top: 20px; color: green; font-weight: bold; }
+        .offline { color: red !important; }
+    </style>
+</head>
+<body>
+
+    <h2>🚗 แอปคนขับรถ (Van 1)</h2>
+    <p>กดปุ่มเพื่อเริ่มส่งตำแหน่ง</p>
+    
+    <button onclick="startTracking()" style="background-color: #4CAF50; color: white;">เริ่มงาน (Start)</button>
+    <button onclick="stopTracking()" style="background-color: #f44336; color: white;">เลิกงาน (Stop)</button>
+    
+    <div id="status" class="offline">สถานะ: หยุดนิ่ง</div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // 1. วางค่า Config ของคุณตรงนี้ (เอามาจาก Firebase Console)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
+            authDomain: "my-apartment-shuttle.firebaseapp.com",
+            databaseURL: "https://my-apartment-shuttle-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-apartment-shuttle",
+            storageBucket: "my-apartment-shuttle.firebasestorage.app",
+            messagingSenderId: "808566202899",
+            appId: "1:808566202899:web:5626ae23c0df6335d455e6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let watchId = null;
+        const vanId = 'van2'; // ถ้าเป็นรถคันที่ 2 ให้แก้เป็น 'van2'
+
+        function startTracking() {
+            if (navigator.geolocation) {
+                // ป้องกันหน้าจอดับ (เบื้องต้น) - ควรตั้งค่าที่มือถือด้วยให้เปิดจอค้างไว้
+                document.getElementById('status').innerText = "สถานะ: กำลังส่งสัญญาณ...";
+                document.getElementById('status').className = "";
+
+                // ดึงพิกัดต่อเนื่อง
+                watchId = navigator.geolocation.watchPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    // ส่งขึ้น Firebase
+                    db.ref('shuttles/' + vanId).set({
+                        lat: lat,
+                        lng: lng,
+                        timestamp: Date.now(),
+                        active: true
+                    });
+
+                    document.getElementById('status').innerText = `ส่งพิกัดล่าสุด: ${new Date().toLocaleTimeString()}`;
+
+                }, (error) => {
+                    alert("Error: " + error.message);
+                }, {
+                    enableHighAccuracy: true // ขอพิกัดแม่นยำสูงสุด
+                });
+            } else {
+                alert("มือถือเครื่องนี้ไม่รองรับ GPS");
+            }
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                
+                // อัปเดตสถานะว่าหยุดแล้ว
+                db.ref('shuttles/' + vanId).update({ active: false });
+                
+                document.getElementById('status').innerText = "สถานะ: หยุดส่งสัญญาณ";
+                document.getElementById('status').className = "offline";
+            }
+        }
+    </script>
+</body>
+</html>
