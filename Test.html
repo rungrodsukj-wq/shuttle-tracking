@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shuttle Tracker V2.1</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", 
+                        "secondary": "#db2777",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { overflow: hidden; }
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        
+        .leaflet-div-icon { background: transparent; border: none; }
+        .leaflet-control-attribution { font-size: 8px; opacity: 0.6; }
+
+        .station-label {
+            background: rgba(255,255,255,0.9); border: 1px solid #cbd5e1; 
+            border-radius: 4px; padding: 2px 6px; font-size: 10px; 
+            font-weight: 600; color: #334155; white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .leaflet-tooltip-top:before { display: none; }
+    </style>
+</head>
+<body class="font-display bg-gray-100 text-slate-900 h-screen w-full flex flex-col relative">
+
+    <div id="map"></div>
+
+    <div class="absolute inset-0 z-10 flex flex-col justify-between pointer-events-none">
+        
+        <div class="px-4 pt-4 pb-2 w-full pointer-events-auto">
+            <div class="bg-white/90 backdrop-blur-md shadow-lg rounded-full p-2 pl-4 pr-2 flex items-center justify-between border border-white/50">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">STATUS</span>
+                    <div class="h-4 w-px bg-slate-200"></div>
+                    
+                    <div class="flex items-center gap-1.5 cursor-pointer" onclick="focusVan('van1')">
+                        <span class="material-symbols-outlined text-primary text-[20px]">directions_bus</span>
+                        <span id="status-van1" class="text-xs font-semibold text-slate-700">รอ...</span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 cursor-pointer opacity-80" onclick="focusVan('van2')">
+                        <span class="material-symbols-outlined text-secondary text-[20px]">airport_shuttle</span>
+                        <span id="status-van2" class="text-xs font-semibold text-slate-500">รอ...</span>
+                    </div>
+                </div>
+                
+                <button onclick="resetView()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">my_location</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-grow"></div>
+
+        <div class="flex flex-col w-full pointer-events-auto pb-6"> <div class="px-4">
+                <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden transition-all duration-300" id="infoCard">
+                    
+                    <div class="px-4 pt-3 pb-3 border-b border-slate-100 flex justify-between items-center cursor-pointer active:bg-slate-50" onclick="toggleInfo()">
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">จุดจอดที่ใกล้ที่สุด</p>
+                            <h3 class="text-slate-900 font-bold text-lg leading-tight flex items-center gap-2">
+                                หน้าหอพัก Salaya One
+                                <span id="chevron" class="material-symbols-outlined text-slate-400 text-lg transition-transform duration-300">expand_less</span>
+                            </h3>
+                        </div>
+                        <div class="bg-blue-50 text-primary p-2 rounded-full">
+                            <span class="material-symbols-outlined text-[20px]">location_on</span>
+                        </div>
+                    </div>
+                    
+                    <div id="infoContent" class="flex flex-col transition-all duration-300 ease-in-out origin-top" style="max-height: 500px; opacity: 1;">
+                        
+                        <button onclick="focusVan('van1')" class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 w-full text-left">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-primary flex items-center justify-center text-sm font-bold">1</div>
+                                <div class="flex flex-col items-start">
+                                    <span class="text-sm font-semibold text-slate-900">รถคันสีฟ้า</span>
+                                    <span class="text-[10px] text-slate-500">กำลังวิ่งรับส่ง</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span id="time-van1" class="text-lg font-bold text-primary">-- min</span>
+                                <span class="text-[10px] text-slate-400">On Route</span>
+                            </div>
+                        </button>
+
+                        <button onclick="focusVan('van2')" class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors w-full text-left">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-pink-100 text-secondary flex items-center justify-center text-sm font-bold">2</div>
+                                <div class="flex flex-col items-start">
+                                    <span class="text-sm font-semibold text-slate-900">รถคันสีชมพู</span>
+                                    <span class="text-[10px] text-slate-500">กำลังวิ่งรับส่ง</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span id="time-van2" class="text-lg font-bold text-secondary">-- min</span>
+                                <span class="text-[10px] text-slate-400">On Route</span>
+                            </div>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // 1. Config Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
+            authDomain: "my-apartment-shuttle.firebaseapp.com",
+            databaseURL: "https://my-apartment-shuttle-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-apartment-shuttle",
+            storageBucket: "my-apartment-shuttle.firebasestorage.app",
+            messagingSenderId: "808566202899",
+            appId: "1:808566202899:web:5626ae23c0df6335d455e6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. Map Setup
+        const map = L.map('map', { zoomControl: false }).setView([13.8013075, 100.3118486], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: 'OpenStreetMap'
+        }).addTo(map);
+
+        // --- Custom Marker ---
+        function createCustomMarker(type, label) {
+            const colorClass = type === 'van1' ? 'bg-primary border-primary' : 'bg-secondary border-secondary';
+            const iconName = type === 'van1' ? 'directions_bus' : 'airport_shuttle';
+            
+            const html = `
+                <div class="relative transform transition-transform hover:scale-110">
+                    <div class="bg-white p-1 rounded-full shadow-lg border-2 ${colorClass.split(' ')[1]}">
+                        <div class="${colorClass.split(' ')[0]} text-white p-1.5 rounded-full flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[18px]">${iconName}</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1">
+                        <span class="${colorClass.split(' ')[0]} text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold">${label}</span>
+                    </div>
+                </div>
+            `;
+            return L.divIcon({
+                className: 'custom-pin',
+                html: html,
+                iconSize: [40, 50],
+                iconAnchor: [20, 25],
+                popupAnchor: [0, -30]
+            });
+        }
+
+        const vans = {
+            van1: { marker: null, icon: createCustomMarker('van1', '1'), path: L.polyline([], {color: '#2563eb', weight: 4}).addTo(map) },
+            van2: { marker: null, icon: createCustomMarker('van2', '2'), path: L.polyline([], {color: '#db2777', weight: 4}).addTo(map) }
+        };
+
+        // 3. Stations
+        const stations = [
+            { name: "Salaya One", lat: 13.8013075, lng: 100.3118486 },
+            { name: "1.Music", lat: 13.7889047, lng: 100.3238907 },
+            { name: "2.1 Sci 3", lat: 13.7930033, lng: 100.3220947 },
+            { name: "2.2 Sci 2", lat: 13.7928089, lng: 100.3232846 },
+            { name: "3. Social Sci", lat: 13.7922138, lng: 100.3248688 },
+            { name: "4. New MUIC", lat: 13.7906036, lng: 100.3264292 },
+            { name: "5. Old MUIC", lat: 13.7928254, lng: 100.3260472 },
+            { name: "6. Campus", lat: 13.7937534, lng: 100.3248047 },
+            { name: "7. Engineering", lat: 13.7963113, lng: 100.3249136 },
+            { name: "8. ICT", lat: 13.7944683, lng: 100.3247064 },
+            { name: "9. Med Tech", lat: 13.7975978, lng: 100.3220244 },
+            { name: "10. PT/MT", lat: 13.7987106, lng: 100.3230891 },
+            { name: "11. Liberal Arts", lat: 13.7972821, lng: 100.3209150 },
+            { name: "12. Mini-Bus", lat: 13.7948169, lng: 100.3188387 },
+            { name: "13. Vet Sci", lat: 13.7982344, lng: 100.3177604 },
+            { name: "14. MUIDS", lat: 13.7999750, lng: 100.3236323 }
+        ];
+
+        stations.forEach(s => {
+            L.circleMarker([s.lat, s.lng], {
+                radius: 4, fillColor: "white", color: "#94a3b8", weight: 2, opacity: 1, fillOpacity: 1
+            }).addTo(map).bindTooltip(s.name, { permanent: true, direction: 'top', className: 'station-label', offset: [0, -5] });
+        });
+
+        // 4. Firebase Tracking
+        function trackShuttle(id) {
+            db.ref('shuttles/' + id).on('value', (snap) => {
+                const data = snap.val();
+                const v = vans[id];
+                const statusEl = document.getElementById(`status-${id}`);
+                const timeEl = document.getElementById(`time-${id}`);
+
+                if (data && data.active) {
+                    const pos = [data.lat, data.lng];
+                    if (!v.marker) v.marker = L.marker(pos, {icon: v.icon}).addTo(map);
+                    else v.marker.setLatLng(pos);
+                    v.path.addLatLng(pos);
+                    
+                    statusEl.innerText = "Online";
+                    statusEl.classList.remove('text-slate-500');
+                    statusEl.classList.add(id === 'van1' ? 'text-primary' : 'text-secondary');
+                    timeEl.innerText = Math.floor(Math.random() * 10 + 1) + " min"; 
+                } else {
+                    statusEl.innerText = "Offline";
+                    statusEl.className = "text-xs font-semibold text-slate-400";
+                    timeEl.innerText = "--";
+                }
+            });
+        }
+        trackShuttle('van1');
+        trackShuttle('van2');
+
+        function focusVan(id) {
+            if (vans[id].marker) map.flyTo(vans[id].marker.getLatLng(), 17, {duration: 1.5});
+            else alert("รถยังไม่ Online ครับ");
+        }
+
+        function resetView() {
+            map.setView([13.8013075, 100.3118486], 15);
+        }
+
+        // --- Toggle Info Function ---
+        let isExpanded = true;
+        function toggleInfo() {
+            const content = document.getElementById('infoContent');
+            const chevron = document.getElementById('chevron');
+            
+            if (isExpanded) {
+                // พับเก็บ
+                content.style.maxHeight = '0px';
+                content.style.opacity = '0';
+                content.style.padding = '0'; // กันพื้นที่เหลือ
+                chevron.style.transform = 'rotate(180deg)'; // ลูกศรชี้ลง
+            } else {
+                // ขยายออก
+                content.style.maxHeight = '500px';
+                content.style.opacity = '1';
+                chevron.style.transform = 'rotate(0deg)'; // ลูกศรชี้ขึ้น
+            }
+            isExpanded = !isExpanded;
+        }
+
+        // Auto Clear Path
+        setInterval(() => {
+            const m = new Date().getMinutes();
+            if (m === 0 || m === 30) { vans.van1.path.setLatLngs([]); vans.van2.path.setLatLngs([]); }
+        }, 60000);
+
+    </script>
+</body>
+</html>
