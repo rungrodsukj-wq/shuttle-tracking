@@ -15,8 +15,8 @@
             --text-main: #1F2937;
             --text-sub: #6B7280;
             --line-color: #E5E7EB;
-            --van1-color: #3B82F6; /* Blue */
-            --van2-color: #F59E0B; /* Orange */
+            --van1-color: #3B82F6;
+            --van2-color: #F59E0B;
         }
 
         body {
@@ -62,7 +62,7 @@
         }
         .live-indicator {
             width: 8px; height: 8px;
-            background-color: #10B981; /* Green */
+            background-color: #10B981;
             border-radius: 50%;
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
             animation: blink 2s infinite;
@@ -80,11 +80,10 @@
             position: relative;
             padding-left: 10px;
         }
-        /* เส้น Time line */
         .timeline::before {
             content: '';
             position: absolute;
-            left: 23px; /* กึ่งกลาง icon */
+            left: 23px;
             top: 20px;
             bottom: 40px;
             width: 2px;
@@ -101,7 +100,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Marker (จุดปกติ) */
         .marker-box {
             width: 28px;
             display: flex;
@@ -120,10 +118,7 @@
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Text Content */
-        .content {
-            flex-grow: 1;
-        }
+        .content { flex-grow: 1; }
         .content h3 {
             margin: 0;
             font-size: 15px;
@@ -139,14 +134,12 @@
             font-weight: 400;
         }
 
-        /* --- ACTIVE STATE (เมื่อรถมาถึง) --- */
         .active-stop .content h3 {
             color: var(--primary);
             font-weight: 700;
             font-size: 16px;
         }
         
-        /* เปลี่ยนจุดเป็นรถบัส */
         .bus-icon {
             width: 32px; height: 32px;
             border-radius: 50%;
@@ -158,11 +151,10 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: absolute;
-            top: -6px; /* ปรับตำแหน่งให้ทับจุดเดิมพอดี */
+            top: -6px;
             z-index: 10;
         }
         
-        /* Effect Pulse วงๆ */
         .pulse-ring {
             position: absolute;
             top: -6px; left: -2px;
@@ -172,7 +164,6 @@
             animation: pulse-ring 2s infinite;
         }
 
-        /* Badge บอกสถานะ (Near/Arrived) */
         .status-badge {
             display: inline-block;
             font-size: 10px;
@@ -184,14 +175,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Specific Colors */
         .van1-bg { background: linear-gradient(135deg, #60A5FA, #2563EB); }
         .van2-bg { background: linear-gradient(135deg, #FBBF24, #D97706); }
-        
         .van1-pulse { border: 2px solid rgba(59, 130, 246, 0.5); }
         .van2-pulse { border: 2px solid rgba(245, 158, 11, 0.5); }
 
-        /* Keyframes */
         @keyframes pulse-ring {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2); }
             70% { transform: scale(1.4); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
@@ -205,7 +193,6 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-
     </style>
 </head>
 <body>
@@ -262,7 +249,11 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
         ];
 
-        // *** ไม่ใช้ vanMemory แล้ว (Logic แบบ Real-time เพียวๆ) ***
+        // เรียกความจำกลับมาใช้แค่เรื่องนี้โดยเฉพาะ
+        const vanMemory = {
+            van1: { lastIndex: 0 },
+            van2: { lastIndex: 0 }
+        };
 
         const container = document.getElementById('timeline-container');
         
@@ -300,7 +291,7 @@
             const allVans = snapshot.val();
             let activeCount = 0;
 
-            // Reset UI (ล้างค่าเก่าให้หมดก่อน)
+            // Reset UI
             document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active-stop'));
             document.querySelectorAll('.dot').forEach(el => el.style.opacity = '1');
             document.querySelectorAll('[id^="bus-container-"]').forEach(el => el.innerHTML = '');
@@ -312,7 +303,7 @@
                     if (vanData.active) {
                         activeCount++;
                         
-                        // 1. หาตำแหน่งที่ใกล้ที่สุด (Real-time Logic)
+                        // 1. คำนวณระยะทางตามจริงก่อน
                         let minDist = Infinity;
                         let potentialIdx = -1;
                         stations.forEach((st, idx) => {
@@ -320,31 +311,50 @@
                             if (d < minDist) { minDist = d; potentialIdx = idx; }
                         });
 
-                        // 2. ถ้าเจอตำแหน่ง ให้แสดงผลเลย (ไม่มีการกันย้อน)
                         if (potentialIdx !== -1) {
-                            const finalIdx = potentialIdx;
+                            
+                            // 2. >>> LOGIC พิเศษกันย้อน (เฉพาะจุด 13 Vet Science) <<<
+                            
+                            // ดึงค่าตำแหน่งล่าสุดจากความจำ
+                            const lastIdx = vanMemory[vanKey].lastIndex;
+                            let finalIdx = potentialIdx;
+
+                            // Index 14 = "13. Faculty of Veterinary Science"
+                            // Index 15 = "14. MUIDS"
+
+                            // ถ้าตำแหน่งล่าสุดคือ Vet Science (14)
+                            if (lastIdx === 14) {
+                                // ยอมให้ขยับไปแค่ 14 (ที่เดิม) หรือ 15 (MUIDS) เท่านั้น
+                                if (potentialIdx === 14 || potentialIdx === 15) {
+                                    finalIdx = potentialIdx;
+                                } else {
+                                    // ถ้า GPS เด้งไปจับป้ายอื่น (0-13) ให้บังคับล็อคไว้ที่ 14
+                                    finalIdx = 14; 
+                                }
+                            }
+                            // ป้ายอื่นปล่อยอิสระตาม GPS
+                            
+                            // อัปเดตความจำ
+                            vanMemory[vanKey].lastIndex = finalIdx;
+
+                            // 3. แสดงผล (ตาม logic ใหม่)
                             const stopItem = document.getElementById(`stop-${finalIdx}`);
                             
                             if (stopItem) {
                                 stopItem.classList.add('active-stop');
-                                
-                                // ซ่อนจุดเดิม -> ใส่รถเข้าไปแทน
                                 document.getElementById(`dot-${finalIdx}`).style.opacity = '0';
 
                                 const busContainer = document.getElementById(`bus-container-${finalIdx}`);
                                 
-                                // สร้าง Pulse Ring (วงๆ เต้นๆ)
                                 const pulseRing = document.createElement('div');
                                 pulseRing.className = `pulse-ring ${vanKey}-pulse`;
                                 busContainer.appendChild(pulseRing);
 
-                                // สร้าง Icon รถบัส
                                 const busIcon = document.createElement('div');
                                 busIcon.className = `bus-icon ${vanKey}-bg`;
                                 busIcon.innerHTML = `<i class="fas fa-bus"></i>`;
                                 busContainer.appendChild(busIcon);
 
-                                // สร้าง Status Text (Near / Arrived)
                                 const statusArea = document.getElementById(`status-area-${finalIdx}`);
                                 const distToStop = getDistance(vanData.lat, vanData.lng, stations[finalIdx].lat, stations[finalIdx].lng);
                                 let statusText = "Arrived";
