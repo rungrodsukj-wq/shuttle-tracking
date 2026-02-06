@@ -3,208 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shuttle Tracker Premium</title>
+    <title>Shuttle Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root {
-            --primary: #4F46E5;
-            --bg-color: #F3F4F6;
-            --card-bg: #ffffff;
-            --text-main: #1F2937;
-            --text-sub: #6B7280;
-            --line-color: #E5E7EB;
-            --van1-color: #3B82F6; /* Blue */
-            --van2-color: #F59E0B; /* Orange */
-        }
-
         body {
             font-family: 'Inter', 'Kanit', sans-serif;
-            background-color: var(--bg-color);
+            background-color: #f5f7fa;
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
-            min-height: 100vh;
         }
 
         .card {
-            background: var(--card-bg);
+            background: white;
             width: 100%;
-            max-width: 400px; /* ขยายเล็กน้อยให้อ่านง่าย */
-            border-radius: 24px;
-            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
-            padding: 30px;
-            position: relative;
-            overflow: hidden;
+            max-width: 380px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 25px;
+            padding-bottom: 50px;
         }
 
-        /* Header Style */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--line-color);
+            margin-bottom: 25px;
         }
-        .header h2 {
-            margin: 0;
-            font-size: 22px;
-            color: var(--text-main);
-            font-weight: 700;
-        }
-        .header-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .live-indicator {
-            width: 8px; height: 8px;
-            background-color: #10B981; /* Green */
-            border-radius: 50%;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-            animation: blink 2s infinite;
-        }
-        .live-text {
-            font-size: 12px;
-            font-weight: 600;
-            color: #10B981;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .header h2 { margin: 0; font-size: 20px; color: #202124; font-weight: 700; }
+        .live-badge {
+            background: #e8f0fe; color: #1a73e8; padding: 4px 8px; 
+            border-radius: 4px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;
         }
 
-        /* Timeline Structure */
-        .timeline {
-            position: relative;
-            padding-left: 10px;
-        }
-        /* เส้น Time line */
+        .timeline { position: relative; padding-left: 10px; margin-top: 10px; }
         .timeline::before {
-            content: '';
-            position: absolute;
-            left: 23px; /* กึ่งกลาง icon */
-            top: 20px;
-            bottom: 40px;
-            width: 2px;
-            background: linear-gradient(to bottom, var(--line-color) 50%, transparent);
-            z-index: 0;
+            content: ''; position: absolute; left: 24px; top: 15px; bottom: 30px;
+            width: 2px; background: #e8eaed; z-index: 0;
         }
 
         .stop-item {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 32px; /* ระยะห่างระหว่างสถานี */
-            z-index: 1;
-            transition: all 0.3s ease;
+            position: relative; display: flex; align-items: flex-start;
+            margin-bottom: 30px; z-index: 1; min-height: 40px;
         }
 
-        /* Marker (จุดปกติ) */
-        .marker-box {
-            width: 28px;
-            display: flex;
-            justify-content: center;
-            margin-right: 18px;
-            flex-shrink: 0;
-            position: relative;
-            padding-top: 4px; /* ดันลงมานิดนึงให้ตรงกับ Text */
+        /* Marker ปกติ (จุดกลม) */
+        .marker {
+            width: 30px; height: 30px; border-radius: 50%; background: white;
+            border: 2px solid #e8eaed; display: flex; align-items: center; justify-content: center;
+            margin-right: 15px; flex-shrink: 0; position: relative;
         }
-        .dot {
-            width: 10px; height: 10px;
-            background: #D1D5DB;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 0 0 1px #E5E7EB;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        .circle-dot { width: 8px; height: 8px; background: #e8eaed; border-radius: 50%; }
 
-        /* Text Content */
-        .content {
-            flex-grow: 1;
-        }
-        .content h3 {
-            margin: 0;
-            font-size: 15px;
-            color: var(--text-main);
-            font-weight: 500;
-            line-height: 1.4;
-            transition: color 0.3s;
-        }
-        .content p {
-            margin: 4px 0 0;
-            font-size: 12px;
-            color: var(--text-sub);
-            font-weight: 400;
-        }
+        /* ข้อความ */
+        .content h3 { margin: 0; font-size: 15px; color: #3c4043; font-weight: 500; line-height: 1.4; }
+        .content p { margin: 2px 0 0; font-size: 12px; color: #9aa0a6; }
 
-        /* --- ACTIVE STATE (เมื่อรถมาถึง) --- */
-        .active-stop .content h3 {
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
-        /* เปลี่ยนจุดเป็นรถบัส */
-        .bus-icon {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: absolute;
-            top: -6px; /* ปรับตำแหน่งให้ทับจุดเดิมพอดี */
+        /* --- STYLES สำหรับรูปรถ --- */
+        .van-badge {
+            position: absolute; left: 45px; top: -25px; /* ลอยอยู่เหนือชื่อสถานี */
+            padding: 4px 10px; border-radius: 15px;
+            font-size: 11px; font-weight: bold; color: white;
+            display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             z-index: 10;
-        }
-        
-        /* Effect Pulse วงๆ */
-        .pulse-ring {
-            position: absolute;
-            top: -6px; left: -2px;
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            z-index: 5;
-            animation: pulse-ring 2s infinite;
+            transition: top 0.3s ease;
         }
 
-        /* Badge บอกสถานะ (Near/Arrived) */
-        .status-badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-top: 4px;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        /* Van 1 : สีน้ำเงิน */
+        .van1-badge { background: #1a73e8; }
+        /* Van 2 : สีส้ม */
+        .van2-badge { background: #f57c00; top: -25px; right: 0; left: auto; /* Van 2 ให้ชิดขวา */ }
 
-        /* Specific Colors */
-        .van1-bg { background: linear-gradient(135deg, #60A5FA, #2563EB); }
-        .van2-bg { background: linear-gradient(135deg, #FBBF24, #D97706); }
-        
-        .van1-pulse { border: 2px solid rgba(59, 130, 246, 0.5); }
-        .van2-pulse { border: 2px solid rgba(245, 158, 11, 0.5); }
-
-        /* Keyframes */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2); }
-            70% { transform: scale(1.4); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
-        }
-        @keyframes popIn {
-            0% { transform: scale(0); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        /* เมื่อรถมาถึงสถานี */
+        .active-stop .marker { border-color: #1a73e8; background: #fff; }
+        .active-stop .content h3 { color: #202124; font-weight: 700; }
+        .active-stop .circle-dot { background: #1a73e8; transform: scale(1.2); }
 
     </style>
 </head>
@@ -212,18 +88,12 @@
 
     <div class="card">
         <div class="header">
-            <div>
-                <h2>Shuttle Route</h2>
-                <div style="font-size: 12px; color: #9CA3AF; margin-top: 2px;">Real-time Tracking</div>
-            </div>
-            <div class="header-status">
-                <div class="live-indicator"></div>
-                <span class="live-text"><span id="active-count">0</span> Active</span>
-            </div>
+            <h2>Shuttle Route</h2>
+            <span class="live-badge">LIVE • <span id="active-count">0</span> Vans</span>
         </div>
 
         <div class="timeline" id="timeline-container">
-            <div style="text-align:center; color:#9CA3AF; padding:20px;">Loading data...</div>
+            Loading...
         </div>
     </div>
 
@@ -243,6 +113,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // รายชื่อสถานี
         const stations = [
             { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },//13.801307528476485, 100.31184859685465
             { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
@@ -262,28 +133,21 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
         ];
 
-        const vanMemory = {
-            van1: { lastIndex: 0 },
-            van2: { lastIndex: 0 }
-        };
-
+        // Render รายการสถานีครั้งแรก
         const container = document.getElementById('timeline-container');
-        
         function renderRoute() {
             container.innerHTML = '';
             stations.forEach((st, index) => {
-                // ตัดคำว่า "Faculty of" ออกเพื่อให้สั้นลงบนมือถือ ถ้าต้องการ
-                let displayName = st.name; // .replace('Faculty of ', ''); 
-
+                // สร้าง div สำหรับ van badges แบบ dynamic
                 container.innerHTML += `
                     <div class="stop-item" id="stop-${index}">
-                        <div class="marker-box">
-                            <div class="dot" id="dot-${index}"></div>
-                            <div id="bus-container-${index}" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+                        <div class="marker">
+                            <div class="circle-dot"></div>
                         </div>
-                        <div class="content">
-                            <h3>${displayName}</h3>
-                            <div id="status-area-${index}"></div>
+                        <div class="content" style="flex-grow:1; position:relative;">
+                            <div id="badge-area-${index}"></div>
+                            
+                            <h3>${st.name}</h3>
                         </div>
                     </div>
                 `;
@@ -291,6 +155,7 @@
         }
         renderRoute();
 
+        // คำนวณระยะทาง
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; 
             const φ1 = lat1 * Math.PI/180;
@@ -301,79 +166,56 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
+        // --- REALTIME LOGIC ---
+        // ฟังที่ root 'shuttles' เพื่อเอาข้อมูลทั้ง van1 และ van2
         db.ref('shuttles').on('value', (snapshot) => {
             const allVans = snapshot.val();
             let activeCount = 0;
 
-            // Reset UI
+            // 1. Clear ป้ายรถเก่าออกทั้งหมดก่อน
+            document.querySelectorAll('.van-badge').forEach(el => el.remove());
             document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active-stop'));
-            document.querySelectorAll('.dot').forEach(el => el.style.opacity = '1');
-            // ลบ Icon รถเก่า และ Badge เก่า
-            document.querySelectorAll('[id^="bus-container-"]').forEach(el => el.innerHTML = '');
-            document.querySelectorAll('[id^="status-area-"]').forEach(el => el.innerHTML = '');
 
             if (allVans) {
+                // วนลูปเช็กรถทีละคัน (key คือ van1, van2)
                 Object.keys(allVans).forEach(vanKey => {
                     const vanData = allVans[vanKey];
+
+                    // เช็กว่ารถ Active และข้อมูลไม่เก่าเกินไป (เผื่อค้าง)
                     if (vanData.active) {
                         activeCount++;
                         
-                        // 1. Logic ระยะทาง
+                        // หาสถานีที่ใกล้ที่สุด
                         let minDist = Infinity;
-                        let potentialIdx = -1;
+                        let closestIdx = -1;
+
                         stations.forEach((st, idx) => {
                             const d = getDistance(vanData.lat, vanData.lng, st.lat, st.lng);
-                            if (d < minDist) { minDist = d; potentialIdx = idx; }
+                            if (d < minDist) {
+                                minDist = d;
+                                closestIdx = idx;
+                            }
                         });
 
-                        // 2. Logic กันย้อน
-                        if (potentialIdx !== -1) {
-                            const lastIdx = vanMemory[vanKey].lastIndex;
-                            const isMovingForward = potentialIdx >= lastIdx;
-                            const isLooping = (lastIdx > 10 && potentialIdx < 3);
-
-                            if (isMovingForward || isLooping) {
-                                vanMemory[vanKey].lastIndex = potentialIdx;
-                            }
+                        // แสดงผล
+                        if (closestIdx !== -1) {
+                            const badgeArea = document.getElementById(`badge-area-${closestIdx}`);
+                            const stopItem = document.getElementById(`stop-${closestIdx}`);
                             
-                            // 3. Render ใหม่ให้สวยงาม
-                            const finalIdx = vanMemory[vanKey].lastIndex;
-                            const stopItem = document.getElementById(`stop-${finalIdx}`);
+                            // Highlight สถานี
+                            stopItem.classList.add('active-stop');
+
+                            // สร้างป้ายชื่อรถ
+                            const badge = document.createElement('div');
+                            badge.className = `van-badge ${vanKey}-badge`; // เพิ่มคลาสสีตามชื่อ van
                             
-                            if (stopItem) {
-                                stopItem.classList.add('active-stop');
-                                
-                                // ซ่อนจุดเดิม
-                                document.getElementById(`dot-${finalIdx}`).style.opacity = '0';
-
-                                // สร้าง Icon รถบัส
-                                const busContainer = document.getElementById(`bus-container-${finalIdx}`);
-                                const busIcon = document.createElement('div');
-                                busIcon.className = `bus-icon ${vanKey}-bg`;
-                                busIcon.innerHTML = `<i class="fas fa-bus"></i>`;
-                                
-                                // สร้าง Pulse Ring
-                                const pulseRing = document.createElement('div');
-                                pulseRing.className = `pulse-ring ${vanKey}-pulse`;
-
-                                busContainer.appendChild(pulseRing);
-                                busContainer.appendChild(busIcon);
-
-                                // สร้าง Status Text (Near / Arrived)
-                                const statusArea = document.getElementById(`status-area-${finalIdx}`);
-                                const distToStop = getDistance(vanData.lat, vanData.lng, stations[finalIdx].lat, stations[finalIdx].lng);
-                                let statusText = "Arrived";
-                                let statusIcon = "fa-check-circle";
-                                if (distToStop > 100) { 
-                                    statusText = "Approaching";
-                                    statusIcon = "fa-clock";
-                                }
-
-                                const badge = document.createElement('div');
-                                badge.className = `status-badge ${vanKey}-bg`;
-                                badge.innerHTML = `<i class="fas ${statusIcon}" style="margin-right:4px;"></i> ${vanKey.toUpperCase()} • ${statusText}`;
-                                statusArea.appendChild(badge);
-                            }
+                            // ข้อความในป้าย
+                            let statusText = "Arrived";
+                            if (minDist > 100) statusText = "Near"; 
+                            // ถ้าอยากโชว์เป็นไอคอนรถ + ชื่อ
+                            badge.innerHTML = `🚌 ${vanKey.toUpperCase()} <span style="font-weight:400; opacity:0.8; margin-left:3px; font-size:9px;">(${statusText})</span>`;
+                            
+                            badgeArea.appendChild(badge);
                         }
                     }
                 });
