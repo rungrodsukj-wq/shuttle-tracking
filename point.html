@@ -176,9 +176,9 @@
         }
 
         .van1-bg { background: linear-gradient(135deg, #60A5FA, #2563EB); }
-        .van2-bg { background: linear-gradient(135deg, #F472B6, #DB2777); }
+        .van2-bg { background: linear-gradient(135deg, #F472B6, #DB2777); } /* สีชมพู */
         .van1-pulse { border: 2px solid rgba(59, 130, 246, 0.5); }
-        .van2-pulse { border: 2px solid rgba(219, 39, 119, 0.5); }
+        .van2-pulse { border: 2px solid rgba(219, 39, 119, 0.5); } /* สีชมพู */
 
         @keyframes pulse-ring {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2); }
@@ -321,16 +321,10 @@
                             // Index 15 = MUIDS
                             // Index 0 = Salaya One
 
-                            // กรณีรถอยู่ที่ Vet Science (14) หรือ MUIDS (15)
                             if (lastIdx >= 14) {
-                                // ทางเลือกที่ถูกต้องมีแค่:
-                                // 1. ไปต่อข้างหน้า (14 -> 15) หรืออยู่ที่เดิม (14,15)
-                                // 2. วนกลับไปจุดเริ่มต้น Salaya One (0)
-                                
                                 if (gpsIdx >= 14 || gpsIdx === 0) {
-                                    finalIdx = gpsIdx; // ยอมรับ
+                                    finalIdx = gpsIdx; 
                                 } else {
-                                    // ถ้า GPS เด้งไปเลขอื่น (เช่น 1, 2, 3...) ให้ตรึงไว้ที่เดิม
                                     finalIdx = lastIdx; 
                                 }
                             }
@@ -367,7 +361,11 @@
 
                                 const badge = document.createElement('div');
                                 badge.className = `status-badge ${vanKey}-bg`;
-                                badge.innerHTML = `<i class="fas ${statusIcon}" style="margin-right:4px;"></i> ${vanKey.toUpperCase()} • ${statusText}`;
+                                
+                                // >>> แก้ไขจุดแสดงผล: เปลี่ยนคำว่า VAN -> SHUTTLE <<<
+                                const displayName = vanKey.replace('van', 'Shuttle ').toUpperCase();
+                                
+                                badge.innerHTML = `<i class="fas ${statusIcon}" style="margin-right:4px;"></i> ${displayName} • ${statusText}`;
                                 statusArea.appendChild(badge);
                             }
                         }
