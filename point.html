@@ -32,7 +32,7 @@
         .card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 400px; /* ขยายเล็กน้อยให้อ่านง่าย */
+            max-width: 400px;
             border-radius: 24px;
             box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
             padding: 30px;
@@ -96,7 +96,7 @@
             position: relative;
             display: flex;
             align-items: flex-start;
-            margin-bottom: 32px; /* ระยะห่างระหว่างสถานี */
+            margin-bottom: 32px;
             z-index: 1;
             transition: all 0.3s ease;
         }
@@ -109,7 +109,7 @@
             margin-right: 18px;
             flex-shrink: 0;
             position: relative;
-            padding-top: 4px; /* ดันลงมานิดนึงให้ตรงกับ Text */
+            padding-top: 4px;
         }
         .dot {
             width: 10px; height: 10px;
@@ -262,7 +262,7 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
         ];
 
-        // *** ไม่ใช้ตัวแปร vanMemory แล้ว เพราะไม่ต้องจำค่าเก่า ***
+        // *** ไม่ใช้ vanMemory แล้ว (Logic แบบ Real-time เพียวๆ) ***
 
         const container = document.getElementById('timeline-container');
         
@@ -270,7 +270,6 @@
             container.innerHTML = '';
             stations.forEach((st, index) => {
                 let displayName = st.name;
-
                 container.innerHTML += `
                     <div class="stop-item" id="stop-${index}">
                         <div class="marker-box">
@@ -301,10 +300,9 @@
             const allVans = snapshot.val();
             let activeCount = 0;
 
-            // Reset UI
+            // Reset UI (ล้างค่าเก่าให้หมดก่อน)
             document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('active-stop'));
             document.querySelectorAll('.dot').forEach(el => el.style.opacity = '1');
-            // ลบ Icon รถเก่า และ Badge เก่า
             document.querySelectorAll('[id^="bus-container-"]').forEach(el => el.innerHTML = '');
             document.querySelectorAll('[id^="status-area-"]').forEach(el => el.innerHTML = '');
 
@@ -314,7 +312,7 @@
                     if (vanData.active) {
                         activeCount++;
                         
-                        // 1. หาตำแหน่งที่ใกล้ที่สุด (Pure Distance Logic)
+                        // 1. หาตำแหน่งที่ใกล้ที่สุด (Real-time Logic)
                         let minDist = Infinity;
                         let potentialIdx = -1;
                         stations.forEach((st, idx) => {
@@ -322,30 +320,28 @@
                             if (d < minDist) { minDist = d; potentialIdx = idx; }
                         });
 
-                        // 2. ถ้าเจอตำแหน่ง ให้แสดงผลเลย (เอา Logic กันย้อนออกหมดแล้ว)
+                        // 2. ถ้าเจอตำแหน่ง ให้แสดงผลเลย (ไม่มีการกันย้อน)
                         if (potentialIdx !== -1) {
-                            
-                            const finalIdx = potentialIdx; // ใช้ค่าที่วัดได้จริงเลย
-                            
+                            const finalIdx = potentialIdx;
                             const stopItem = document.getElementById(`stop-${finalIdx}`);
                             
                             if (stopItem) {
                                 stopItem.classList.add('active-stop');
                                 
-                                // ซ่อนจุดเดิม
+                                // ซ่อนจุดเดิม -> ใส่รถเข้าไปแทน
                                 document.getElementById(`dot-${finalIdx}`).style.opacity = '0';
 
-                                // สร้าง Icon รถบัส
                                 const busContainer = document.getElementById(`bus-container-${finalIdx}`);
+                                
+                                // สร้าง Pulse Ring (วงๆ เต้นๆ)
+                                const pulseRing = document.createElement('div');
+                                pulseRing.className = `pulse-ring ${vanKey}-pulse`;
+                                busContainer.appendChild(pulseRing);
+
+                                // สร้าง Icon รถบัส
                                 const busIcon = document.createElement('div');
                                 busIcon.className = `bus-icon ${vanKey}-bg`;
                                 busIcon.innerHTML = `<i class="fas fa-bus"></i>`;
-                                
-                                // สร้าง Pulse Ring
-                                const pulseRing = document.createElement('div');
-                                pulseRing.className = `pulse-ring ${vanKey}-pulse`;
-
-                                busContainer.appendChild(pulseRing);
                                 busContainer.appendChild(busIcon);
 
                                 // สร้าง Status Text (Near / Arrived)
