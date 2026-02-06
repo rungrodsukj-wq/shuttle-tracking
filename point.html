@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shuttle Tracker Premium</title>
+    <title>Shuttle Tracker Premium - Strict Mode</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -231,25 +231,25 @@
         const db = firebase.database();
 
         const stations = [
-            { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },//13.801307528476485, 100.31184859685465
-            { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
-            { name: "2.1 Faculty of Science 3", lat: 13.793003329175068, lng: 100.32209472460619 }, //13.793003329175068, 100.32209472460619
-            { name: "2.2 Faculty of Science 2", lat: 13.792808930787233, lng: 100.3232846273437 }, //13.792808930787233, 100.3232846273437
-            { name: "3. Faculty of Social Sciences and Humanities", lat: 13.792213752692787, lng: 100.32486876253822 }, //13.792213752692787, 100.32486876253822
-            { name: "4. New MUIC Building", lat: 13.790603615089555, lng: 100.32642917272868 },//
-            { name: "5. Old MUIC Building", lat: 13.792825444200497, lng: 100.32604719730193 },//
-            { name: "6. Campus Building", lat: 13.793753432988641, lng: 100.32480465775636 },//13.793753432988641, 100.32480465775636
-            { name: "7. Faculty of Engineering", lat: 13.796311283547787, lng: 100.32491359376786 },//13.796311283547787, 100.32491359376786
-            { name: "8. ICT", lat: 13.7944683388828, lng: 100.32470635179706 },//13.7944683388828, 100.32470635179706
-            { name: "9. Faculty of Medical Technology", lat: 13.797597784507522, lng: 100.3220243967522 },//13.797597784507522, 100.3220243967522
-            { name: "10. Physical and Medical Technology Building", lat: 13.798710641549654, lng: 100.32308905165148 },//13.798710641549654, 100.32308905165148
-            { name: "11. Faculty of Liberal Arts", lat: 13.79728207941215, lng: 100.32091504261966 },//13.79728207941215, 100.32091504261966
-            { name: "12. Electric Mini-Bus", lat: 13.794816858149446, lng: 100.31883868060257 },//13.794816858149446, 100.31883868060257
-            { name: "13. Faculty of Veterinary Science", lat: 13.798234387105726, lng: 100.3177604325669 },//13.798234387105726, 100.3177604325669
-            { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
+            { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 }, // 0
+            { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 }, // 1
+            { name: "2.1 Faculty of Science 3", lat: 13.793003329175068, lng: 100.32209472460619 }, // 2
+            { name: "2.2 Faculty of Science 2", lat: 13.792808930787233, lng: 100.3232846273437 }, // 3
+            { name: "3. Faculty of Social Sciences and Humanities", lat: 13.792213752692787, lng: 100.32486876253822 }, // 4
+            { name: "4. New MUIC Building", lat: 13.790603615089555, lng: 100.32642917272868 }, // 5
+            { name: "5. Old MUIC Building", lat: 13.792825444200497, lng: 100.32604719730193 }, // 6
+            { name: "6. Campus Building", lat: 13.793753432988641, lng: 100.32480465775636 }, // 7
+            { name: "7. Faculty of Engineering", lat: 13.796311283547787, lng: 100.32491359376786 }, // 8
+            { name: "8. ICT", lat: 13.7944683388828, lng: 100.32470635179706 }, // 9
+            { name: "9. Faculty of Medical Technology", lat: 13.797597784507522, lng: 100.3220243967522 }, // 10
+            { name: "10. Physical and Medical Technology Building", lat: 13.798710641549654, lng: 100.32308905165148 }, // 11
+            { name: "11. Faculty of Liberal Arts", lat: 13.79728207941215, lng: 100.32091504261966 }, // 12
+            { name: "12. Electric Mini-Bus", lat: 13.794816858149446, lng: 100.31883868060257 }, // 13
+            { name: "13. Faculty of Veterinary Science", lat: 13.798234387105726, lng: 100.3177604325669 }, // 14 << จุดต้องสงสัย
+            { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 } // 15
         ];
 
-        // เรียกความจำกลับมาใช้แค่เรื่องนี้โดยเฉพาะ
+        // Memory สำหรับกันย้อน
         const vanMemory = {
             van1: { lastIndex: 0 },
             van2: { lastIndex: 0 }
@@ -303,41 +303,44 @@
                     if (vanData.active) {
                         activeCount++;
                         
-                        // 1. คำนวณระยะทางตามจริงก่อน
+                        // 1. หาตำแหน่งตาม GPS ปกติ
                         let minDist = Infinity;
-                        let potentialIdx = -1;
+                        let gpsIdx = -1;
                         stations.forEach((st, idx) => {
                             const d = getDistance(vanData.lat, vanData.lng, st.lat, st.lng);
-                            if (d < minDist) { minDist = d; potentialIdx = idx; }
+                            if (d < minDist) { minDist = d; gpsIdx = idx; }
                         });
 
-                        if (potentialIdx !== -1) {
+                        if (gpsIdx !== -1) {
                             
-                            // 2. >>> LOGIC พิเศษกันย้อน (เฉพาะจุด 13 Vet Science) <<<
-                            
-                            // ดึงค่าตำแหน่งล่าสุดจากความจำ
+                            // 2. >>> LOGIC กันย้อนฉบับแข็งแกร่ง (Hard Lock) <<<
                             const lastIdx = vanMemory[vanKey].lastIndex;
-                            let finalIdx = potentialIdx;
+                            let finalIdx = gpsIdx;
 
                             // Index 14 = "13. Faculty of Veterinary Science"
                             // Index 15 = "14. MUIDS"
+                            // Index 0 = "Salaya One"
 
-                            // ถ้าตำแหน่งล่าสุดคือ Vet Science (14)
-                            if (lastIdx === 14) {
-                                // ยอมให้ขยับไปแค่ 14 (ที่เดิม) หรือ 15 (MUIDS) เท่านั้น
-                                if (potentialIdx === 14 || potentialIdx === 15) {
-                                    finalIdx = potentialIdx;
-                                } else {
-                                    // ถ้า GPS เด้งไปจับป้ายอื่น (0-13) ให้บังคับล็อคไว้ที่ 14
-                                    finalIdx = 14; 
+                            // กฎ: ถ้าเคยอยู่โซนท้ายๆ (14 หรือ 15)
+                            if (lastIdx >= 14) {
+                                // ถ้า GPS บอกว่าอยู่ 14 หรือ 15 -> ยอมรับได้ (ปกติ)
+                                if (gpsIdx >= 14) {
+                                    finalIdx = gpsIdx;
+                                } 
+                                // ถ้า GPS บอกว่าอยู่ 0 (Salaya One) -> ยอมรับได้ (คือวนครบรอบแล้ว)
+                                else if (gpsIdx === 0) {
+                                    finalIdx = 0; 
+                                }
+                                // ถ้า GPS บอกว่าอยู่ตรงกลาง (1 ถึง 13) -> **ห้ามไป!** ให้ล็อคอยู่ที่เดิม
+                                else {
+                                    finalIdx = lastIdx; 
                                 }
                             }
-                            // ป้ายอื่นปล่อยอิสระตาม GPS
                             
-                            // อัปเดตความจำ
+                            // อัปเดตความจำใหม่
                             vanMemory[vanKey].lastIndex = finalIdx;
 
-                            // 3. แสดงผล (ตาม logic ใหม่)
+                            // 3. แสดงผล
                             const stopItem = document.getElementById(`stop-${finalIdx}`);
                             
                             if (stopItem) {
