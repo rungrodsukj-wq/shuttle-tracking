@@ -108,9 +108,10 @@
       }
     });
 
+    const link = "🗺️ แผนที่จุดรับ: https://rungrodsukj-wq.github.io/shuttle-tracking/point.html";
     const msg = foundData
-      ? "📍 รายการรับลูกบ้านรอบปัจจุบัน | Current Pickup Schedule for Residents" + nl + "------------------" + nl + listText + "------------------" + nl + "(as of " + timeNowStr + ")"
-      : "📍 รายการรับลูกบ้านรอบปัจจุบัน | Current Pickup Schedule for Residents" + nl + "------------------" + nl + "ไม่มีจุดรับที่กำหนดไว้ในรอบนี้ครับ | No pickup locations are scheduled for this round." + nl + "------------------" + nl + "(as of " + timeNowStr + ")";
+      ? "📍 รายการรับลูกบ้านรอบปัจจุบัน | Current Pickup Schedule for Residents" + nl + "------------------" + nl + listText + "------------------" + nl + "(as of " + timeNowStr + ")" + nl + link
+      : "📍 รายการรับลูกบ้านรอบปัจจุบัน | Current Pickup Schedule for Residents" + nl + "------------------" + nl + "ไม่มีจุดรับที่กำหนดไว้ในรอบนี้ครับ | No pickup locations are scheduled for this round." + nl + "------------------" + nl + "(as of " + timeNowStr + ")" + nl + link;
 
     navigator.clipboard.writeText(msg)
       .then(() => alert(foundData ? "✅ คัดลอกรายการรอบปัจจุบันแล้ว" : "ℹ️ ไม่เจอรอบวิ่ง: คัดลอกข้อความ 'ไม่มีรายการรับ' ให้แล้ว"))
