@@ -28,7 +28,7 @@
         
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* --- UI PANEL แบบใหม่ (Glassmorphism) --- */
+        /* --- UI PANEL แบบ Glassmorphism --- */
         .ui-panel {
             position: absolute;
             top: 24px; left: 50%; transform: translateX(-50%);
@@ -44,7 +44,7 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* ส่วนหัว */
+        /* ส่วนหัวแผงควบคุม */
         .panel-header {
             padding: 16px 24px;
             display: flex;
@@ -148,7 +148,7 @@
             font-weight: 400;
         }
 
-        /* ไฟสถานะ */
+        /* ไฟสถานะ LED */
         .led { 
             width: 8px; height: 8px; 
             border-radius: 50%; 
@@ -165,7 +165,7 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* ป้ายชื่อสถานีบนแผนที่แบบมินิมอล (Pill shape) */
+        /* ป้ายชื่อสถานีบนแผนที่ (Pill shape) */
         .leaflet-tooltip.station-label {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(4px);
@@ -179,13 +179,27 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             white-space: nowrap;
         }
-        /* ซ่อนลูกศรชี้ของ Tooltip เดิมให้ดูสะอาดตา */
         .leaflet-tooltip-top:before,
         .leaflet-tooltip-bottom:before,
         .leaflet-tooltip-left:before,
         .leaflet-tooltip-right:before {
             display: none !important;
         }
+
+        /* ตกแต่งกล่องเลือกเลเยอร์แผนที่ให้เข้ากับ Glassmorphism */
+        .leaflet-control-layers {
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+            font-family: 'Kanit', sans-serif;
+            padding: 6px 10px !important;
+        }
+        .leaflet-control-layers-toggle { width: 36px !important; height: 36px !important; }
+        
+        /* สไตล์สำหรับซ่อนไอคอนหมุดเริ่มต้นของสถานี */
+        .invisible-icon { background: transparent; border: none; }
 
     </style>
 </head>
@@ -240,17 +254,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. Map Setup (เพิ่มระดับการซูมเริ่มต้นนิดหน่อยให้เห็นรวมๆ ชัดขึ้น)
-        const map = L.map('map', { zoomControl: false }).setView([13.801307528476485, 100.31184859685465], 15);
-        // L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        //     attribution: 'OpenStreetMap'
-        // }).addTo(map);
+        // 2. Map Setup & ตัวเลือกสไตล์แผนที่
+        const mapVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
+        const mapPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
+        const mapDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
+        const mapSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: 'OpenStreetMap'
-        }).addTo(map);
+        // ตั้งค่าให้ mapPositron (มินิมอลขาว) เป็นค่าเริ่มต้น
+        const map = L.map('map', { 
+            zoomControl: false, 
+            layers: [mapPositron] 
+        }).setView([13.801307528476485, 100.31184859685465], 15);
 
-        // ย้ายปุ่ม Zoom ไปขวาล่างเพื่อไม่ให้ชนกับ Panel ด้านบน
+        // รวมรายชื่อแผนที่เพื่อทำปุ่มสลับ
+        const baseMaps = {
+            "⚪ แผนที่มินิมอลขาว": mapPositron,
+            "🎨 แผนที่สีสันเดิม": mapVoyager,
+            "⚫ โหมดมืดสุดล้ำ": mapDark,
+            "📸 ภาพถ่ายดาวเทียม": mapSatellite
+        };
+
+        // สร้างปุ่มกดสลับที่มุมซ้ายล่าง และปุ่มซูมที่ขวาล่าง
+        L.control.layers(baseMaps, null, { position: 'bottomleft' }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         // 3. ฟังก์ชัน UI พับเก็บ
@@ -279,9 +304,8 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }
         ];
 
-        // วาดจุดจอด
+        // วาดจุดจอด (ใช้ divIcon เปล่าเพื่อให้แสดงแค่กล่องข้อความ Pill Shape สวยๆ)
         stations.forEach(s => {
-            // สร้างไอคอนล่องหนเพื่อใช้เฉพาะป้ายข้อความ
             const invisibleIcon = L.divIcon({ className: 'invisible-icon', iconSize: [0, 0] });
             L.marker([s.lat, s.lng], { icon: invisibleIcon }).addTo(map)
              .bindTooltip(s.name, { permanent: true, direction: 'center', className: 'station-label' });
