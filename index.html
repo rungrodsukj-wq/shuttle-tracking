@@ -254,17 +254,25 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. Map Setup & ตัวเลือกสไตล์แผนที่
+        // 📌 พิกัดกรอบที่คุณกำหนดมา (ซ้ายบน และ ขวาล่าง)
+        const mapBounds = [
+            [13.802426683307473, 100.30975185802646], // ซ้ายบน
+            [13.787921778762623, 100.32753012719]    // ขวาล่าง
+        ];
+
+        // 2. Map Setup & ตัวเลือกสไตล์แผนที่ + เพิ่มตัวล็อคกรอบ (maxBounds)
         const mapVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
         const mapPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
         const mapDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OpenStreetMap' });
         const mapSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
 
-        // ตั้งค่าให้ mapPositron (มินิมอลขาว) เป็นค่าเริ่มต้น
         const map = L.map('map', { 
             zoomControl: false, 
-            layers: [mapPositron] 
-        }).setView([13.801307528476485, 100.31184859685465], 15);
+            layers: [mapPositron],
+            maxBounds: mapBounds,         // 🔒 ล็อคกรอบตามพิกัดที่ให้มา
+            maxBoundsViscosity: 1.0,      // 🔒 สัมประสิทธิ์ความเหนียว (1.0 = ห้ามหลุดเด็ดขาด)
+            minZoom: 14                   // 🔒 กันไม่ให้ผู้ใช้ซูมออกไปไกลจนเห็นพื้นที่นอกกรอบเยอะเกินไป
+        }).fitBounds(mapBounds);          // 🎯 ปรับหน้าจอให้พอดีกับกรอบนี้ตั้งแต่เริ่มต้น
 
         // รวมรายชื่อแผนที่เพื่อทำปุ่มสลับ
         const baseMaps = {
@@ -304,7 +312,7 @@
             { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }
         ];
 
-        // วาดจุดจอด (ใช้ divIcon เปล่าเพื่อให้แสดงแค่กล่องข้อความ Pill Shape สวยๆ)
+        // วาดจุดจอด
         stations.forEach(s => {
             const invisibleIcon = L.divIcon({ className: 'invisible-icon', iconSize: [0, 0] });
             L.marker([s.lat, s.lng], { icon: invisibleIcon }).addTo(map)
