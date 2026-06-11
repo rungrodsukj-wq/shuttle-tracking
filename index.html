@@ -10,96 +10,182 @@
     
     <style>
         :root {
-            --primary: #2563eb;
-            --secondary: #db2777;
-            --glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 4px 20px rgba(0,0,0,0.15);
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #ec4899;
+            --secondary-dark: #db2777;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.12);
         }
 
-        body { margin: 0; padding: 0; font-family: 'Kanit', sans-serif; background-color: #f0f2f5; overflow: hidden; }
+        body { 
+            margin: 0; padding: 0; 
+            font-family: 'Kanit', sans-serif; 
+            background-color: #e2e8f0; 
+            overflow: hidden; 
+        }
+        
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* --- UI PANEL แบบใหม่ พับเก็บได้ --- */
+        /* --- UI PANEL แบบใหม่ (Glassmorphism) --- */
         .ui-panel {
             position: absolute;
-            top: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 380px;
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
+            top: 24px; left: 50%; transform: translateX(-50%);
+            width: 92%; max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
             z-index: 1000;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid var(--glass-border);
         }
 
-        /* ส่วนหัว (คลิกเพื่อพับ/ขยายได้) */
+        /* ส่วนหัว */
         .panel-header {
-            padding: 12px 20px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            background: rgba(255,255,255,0.5);
+            background: rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            transition: background 0.2s ease;
         }
 
-        .panel-header h3 { margin: 0; font-size: 1rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .panel-header:hover { background: rgba(255, 255, 255, 0.6); }
+
+        .panel-header h3 { 
+            margin: 0; 
+            font-size: 1.1rem; 
+            font-weight: 600;
+            color: #1e293b; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
         
-        /* ปุ่มลูกศรหมุนได้ */
-        .toggle-icon { transition: transform 0.3s ease; opacity: 0.6; }
+        .toggle-icon { 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            color: #64748b; 
+        }
         .ui-panel.collapsed .toggle-icon { transform: rotate(180deg); }
 
         /* ส่วนเนื้อหาปุ่มกด */
         .panel-content {
-            padding: 0 15px 15px 15px;
-            max-height: 200px; /* ค่าสูงพอประมาณ */
+            padding: 0 20px 20px 20px;
+            max-height: 250px;
             opacity: 1;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* เมื่อพับเก็บ ให้ซ่อนเนื้อหา */
         .ui-panel.collapsed .panel-content {
             max-height: 0;
             padding-bottom: 0;
             opacity: 0;
+            transform: translateY(-10px);
         }
 
         /* Grid ปุ่มกด */
-        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .control-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-top: 16px; 
+        }
 
         .btn-track {
-            border: none; padding: 10px; border-radius: 12px;
-            color: white; cursor: pointer; text-align: left;
-            position: relative; overflow: hidden;
-            transition: transform 0.2s;
-            display: flex; flex-direction: column; justify-content: space-between;
-            min-height: 70px;
+            border: none; 
+            padding: 16px; 
+            border-radius: 16px;
+            color: white; 
+            cursor: pointer; 
+            text-align: left;
+            position: relative; 
+            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            min-height: 85px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .btn-track:active { transform: scale(0.96); }
 
-        .btn-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-pink { background: linear-gradient(135deg, #ec4899, #db2777); }
+        .btn-track:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .btn-track:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-        .car-name { font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .btn-blue { 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-pink { 
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-dark)); 
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .car-name { 
+            font-size: 1.05rem; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
         .status-badge { 
-            font-size: 0.75rem; background: rgba(0,0,0,0.2); 
-            padding: 2px 8px; border-radius: 10px; 
-            display: inline-flex; align-items: center; width: fit-content; margin-top: 5px;
+            font-size: 0.8rem; 
+            background: rgba(0, 0, 0, 0.25); 
+            backdrop-filter: blur(4px);
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            display: inline-flex; 
+            align-items: center; 
+            width: fit-content; 
+            margin-top: 10px;
+            font-weight: 400;
         }
 
         /* ไฟสถานะ */
-        .led { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; background: #ccc; }
-        .led.on { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
-        .led.off { background: #94a3b8; }
-
-        /* ป้ายชื่อสถานีบนแผนที่ */
-        .station-label {
-            background: white; border: 1px solid #e2e8f0; border-radius: 4px;
-            padding: 2px 6px; font-family: 'Kanit'; font-size: 11px; font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; color: #334155;
+        .led { 
+            width: 8px; height: 8px; 
+            border-radius: 50%; 
+            margin-right: 8px; 
+            background: #cbd5e1; 
+            transition: all 0.3s ease;
         }
-        .leaflet-tooltip-top:before { display: none; }
+        .led.on { 
+            background: #4ade80; 
+            box-shadow: 0 0 10px #4ade80, 0 0 20px rgba(74, 222, 128, 0.4); 
+        }
+        .led.off { 
+            background: #94a3b8; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* ป้ายชื่อสถานีบนแผนที่แบบมินิมอล (Pill shape) */
+        .leaflet-tooltip.station-label {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #334155;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            white-space: nowrap;
+        }
+        /* ซ่อนลูกศรชี้ของ Tooltip เดิมให้ดูสะอาดตา */
+        .leaflet-tooltip-top:before,
+        .leaflet-tooltip-bottom:before,
+        .leaflet-tooltip-left:before,
+        .leaflet-tooltip-right:before {
+            display: none !important;
+        }
 
     </style>
 </head>
@@ -107,9 +193,10 @@
 
     <div class="ui-panel" id="mainPanel">
         <div class="panel-header" onclick="togglePanel()">
-            <h3>🚐 ติดตามรถรับส่ง <span style="font-size:0.8em; color:#64748b; font-weight:400;">(แตะเพื่อย่อ/ขยาย)</span></h3>
-            <svg class="toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 15l-6-6-6 6"/> </svg>
+            <h3>🚐 แผนที่รถรับส่ง <span style="font-size:0.75em; color:#64748b; font-weight:400; margin-left:4px;">(แตะเพื่อย่อ/ขยาย)</span></h3>
+            <svg class="toggle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 15l-6-6-6 6"/> 
+            </svg>
         </div>
         
         <div class="panel-content">
@@ -153,11 +240,14 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. Map Setup
+        // 2. Map Setup (เพิ่มระดับการซูมเริ่มต้นนิดหน่อยให้เห็นรวมๆ ชัดขึ้น)
         const map = L.map('map', { zoomControl: false }).setView([13.801307528476485, 100.31184859685465], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: 'OpenStreetMap'
         }).addTo(map);
+
+        // ย้ายปุ่ม Zoom ไปขวาล่างเพื่อไม่ให้ชนกับ Panel ด้านบน
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         // 3. ฟังก์ชัน UI พับเก็บ
         function togglePanel() {
@@ -165,49 +255,49 @@
             panel.classList.toggle('collapsed');
         }
 
-        // 4. จุดจอด 14 จุด (ไม่มีเส้นเชื่อมแล้ว)
+        // 4. จุดจอด 14 จุด
         const stations = [
-            { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },//13.801307528476485, 100.31184859685465
-            { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
-            { name: "2.1 Faculty of Science 3", lat: 13.793003329175068, lng: 100.32209472460619 }, //13.793003329175068, 100.32209472460619
-            { name: "2.2 Faculty of Science 2", lat: 13.792808930787233, lng: 100.3232846273437 }, //13.792808930787233, 100.3232846273437
-            { name: "3. Faculty of Social Sciences and Humanities", lat: 13.792213752692787, lng: 100.32486876253822 }, //13.792213752692787, 100.32486876253822
-            { name: "4. New MUIC Building", lat: 13.790603615089555, lng: 100.32642917272868 },//
-            { name: "5. Old MUIC Building", lat: 13.792825444200497, lng: 100.32604719730193 },//
-            { name: "6. Campus Building", lat: 13.793753432988641, lng: 100.32480465775636 },//13.793753432988641, 100.32480465775636
-            { name: "7. Faculty of Engineering", lat: 13.796311283547787, lng: 100.32491359376786 },//13.796311283547787, 100.32491359376786
-            { name: "8. ICT", lat: 13.7944683388828, lng: 100.32470635179706 },//13.7944683388828, 100.32470635179706
-            { name: "9. Faculty of Medical Technology", lat: 13.797597784507522, lng: 100.3220243967522 },//13.797597784507522, 100.3220243967522
-            { name: "10. Physical and Medical Technology Building", lat: 13.798710641549654, lng: 100.32308905165148 },//13.798710641549654, 100.32308905165148
-            { name: "11. Faculty of Liberal Arts", lat: 13.79728207941215, lng: 100.32091504261966 },//13.79728207941215, 100.32091504261966
-            { name: "12. Electric Mini-Bus", lat: 13.794816858149446, lng: 100.31883868060257 },//13.794816858149446, 100.31883868060257
-            { name: "13. Faculty of Veterinary Science", lat: 13.798234387105726, lng: 100.3177604325669 },//13.798234387105726, 100.3177604325669
-            { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
+            { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },
+            { name: "1. College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
+            { name: "2.1 Faculty of Science 3", lat: 13.793003329175068, lng: 100.32209472460619 }, 
+            { name: "2.2 Faculty of Science 2", lat: 13.792808930787233, lng: 100.3232846273437 }, 
+            { name: "3. Social Sciences", lat: 13.792213752692787, lng: 100.32486876253822 }, 
+            { name: "4. New MUIC", lat: 13.790603615089555, lng: 100.32642917272868 },
+            { name: "5. Old MUIC", lat: 13.792825444200497, lng: 100.32604719730193 },
+            { name: "6. Campus Bldg", lat: 13.793753432988641, lng: 100.32480465775636 },
+            { name: "7. Engineering", lat: 13.796311283547787, lng: 100.32491359376786 },
+            { name: "8. ICT", lat: 13.7944683388828, lng: 100.32470635179706 },
+            { name: "9. Medical Tech", lat: 13.797597784507522, lng: 100.3220243967522 },
+            { name: "10. PT Bldg", lat: 13.798710641549654, lng: 100.32308905165148 },
+            { name: "11. Liberal Arts", lat: 13.79728207941215, lng: 100.32091504261966 },
+            { name: "12. Electric Mini-Bus", lat: 13.794816858149446, lng: 100.31883868060257 },
+            { name: "13. Veterinary", lat: 13.798234387105726, lng: 100.3177604325669 },
+            { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }
         ];
 
-        // วาดจุดจอดอย่างเดียว
+        // วาดจุดจอด
         stations.forEach(s => {
-            L.marker([s.lat, s.lng]).addTo(map)
-             .bindTooltip(s.name, { permanent: true, direction: 'top', className: 'station-label', offset: [0, -10] });
+            // สร้างไอคอนล่องหนเพื่อใช้เฉพาะป้ายข้อความ
+            const invisibleIcon = L.divIcon({ className: 'invisible-icon', iconSize: [0, 0] });
+            L.marker([s.lat, s.lng], { icon: invisibleIcon }).addTo(map)
+             .bindTooltip(s.name, { permanent: true, direction: 'center', className: 'station-label' });
         });
 
         // 5. ระบบติดตามรถ
-        const iconBlue = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png?ga=GA1.1.1656679989.1770308490', iconSize: [40, 40], iconAnchor: [20, 20] });
-        const iconPink = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386456.png?ga=GA1.1.1656679989.1770308490', iconSize: [40, 40], iconAnchor: [20, 20] });
+        const iconBlue = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png?ga=GA1.1.1656679989.1770308490', iconSize: [46, 46], iconAnchor: [23, 23] });
+        const iconPink = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386456.png?ga=GA1.1.1656679989.1770308490', iconSize: [46, 46], iconAnchor: [23, 23] });
 
         const vans = {
-            van1: { marker: null, icon: iconBlue, path: L.polyline([], {color: '#2563eb', weight: 5}).addTo(map) },
-            van2: { marker: null, icon: iconPink, path: L.polyline([], {color: '#db2777', weight: 5}).addTo(map) }
+            van1: { marker: null, icon: iconBlue, path: L.polyline([], {color: '#3b82f6', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map) },
+            van2: { marker: null, icon: iconPink, path: L.polyline([], {color: '#ec4899', weight: 4, dashArray: '5, 10', opacity: 0.8}).addTo(map) }
         };
 
         function focusVan(id) {
             if (vans[id].marker) {
-                map.flyTo(vans[id].marker.getLatLng(), 16, {duration: 1.5});
-                // vans[id].marker.openPopup();
-                // ถ้า Panel เปิดอยู่ ให้พับเก็บอัตโนมัติเพื่อให้เห็นแผนที่ชัดๆ
+                map.flyTo(vans[id].marker.getLatLng(), 16.5, {duration: 1.2});
                 document.getElementById('mainPanel').classList.add('collapsed');
             } else {
-                alert("รถคันนี้ยังไม่ส่งสัญญาณครับ");
+                alert("รถคันนี้ยังไม่ส่งสัญญาณเข้าสู่ระบบครับ");
             }
         }
 
@@ -220,14 +310,14 @@
 
                 if (data && data.active) {
                     const pos = [data.lat, data.lng];
-                    if (!v.marker) v.marker = L.marker(pos, {icon: v.icon}).addTo(map).bindPopup(`<b>${id}</b>`);
+                    if (!v.marker) v.marker = L.marker(pos, {icon: v.icon}).addTo(map).bindPopup(`<b style="font-family:'Kanit';">จุดอัปเดตล่าสุด: รถ${id === 'van1' ? 'คันที่ 1' : 'คันที่ 2'}</b>`);
                     else v.marker.setLatLng(pos);
                     v.path.addLatLng(pos);
 
-                    elStatus.innerText = "Online";
+                    elStatus.innerText = "กำลังวิ่ง";
                     elLed.className = "led on";
                 } else {
-                    elStatus.innerText = "Offline";
+                    elStatus.innerText = "ออฟไลน์";
                     elLed.className = "led off";
                 }
             });
@@ -245,4 +335,3 @@
     </script>
 </body>
 </html>
-
