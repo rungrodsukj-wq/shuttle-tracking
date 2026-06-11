@@ -242,7 +242,11 @@
 
         // 2. Map Setup (เพิ่มระดับการซูมเริ่มต้นนิดหน่อยให้เห็นรวมๆ ชัดขึ้น)
         const map = L.map('map', { zoomControl: false }).setView([13.801307528476485, 100.31184859685465], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        // L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        //     attribution: 'OpenStreetMap'
+        // }).addTo(map);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: 'OpenStreetMap'
         }).addTo(map);
 
