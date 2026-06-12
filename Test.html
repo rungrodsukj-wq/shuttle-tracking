@@ -2,130 +2,244 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Salaya One - Shuttle Service Route</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shuttle Tracker - Salaya One Premium Theme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-dark-blue: #0b2447; /* สีน้ำเงินเข้มตามภาพโปสเตอร์ */
-            --road-white: #ffffff;
-            --road-dash: #e11d48;    /* เส้นประสีแดง */
-            --station-yellow: #facc15; /* วงกลมเหลือง */
-            --glass-bg: rgba(255, 255, 255, 0.9);
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --bg-color: #051329;       /* สีกรมท่ามืดลึก */
+            --card-bg: #0b2447;        /* สีกรมท่าหลักตามภาพโปสเตอร์ */
+            --text-main: #ffffff;
+            --text-sub: #64748b;
+            --line-inactive: #1e3a8a;  /* รางวิ่งตอนออฟไลน์ */
+            --s1-color: #3B82F6;       /* รถคันที่ 1 สีฟ้า */
+            --s1-light: rgba(59, 130, 246, 0.4);
+            --s2-color: #EC4899;       /* รถคันที่ 2 สีชมพู */
+            --s2-light: rgba(236, 72, 153, 0.4);
+            --station-yellow: #facc15; /* สีเหลืองสว่างตามหมุดในภาพ */
         }
 
-        body { 
-            margin: 0; padding: 0; 
-            font-family: 'Kanit', sans-serif; 
-            background-color: var(--bg-dark-blue); 
-            overflow: hidden; 
+        body {
+            font-family: 'Inter', 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            position: relative;
+            border: 1.5px solid rgba(255, 255, 255, 0.15); /* เส้นกรอบบางๆ แบบในภาพ */
+        }
+
+        .header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .header h2 { 
+            margin: 0; 
+            font-size: 22px; 
+            color: var(--text-main); 
+            font-weight: 700; 
+            letter-spacing: 0.5px;
+        }
+        .header p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: var(--station-yellow);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .status-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 12px;
+            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 12px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+        .dot-legend { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* --- TIMELINE CORE --- */
+        .timeline-container {
+            position: relative;
+            padding-left: 0;
+        }
+
+        .rails-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0; 
+        }
+
+        .rail-line {
+            position: absolute;
+            width: 4px;
+            background: var(--line-inactive);
+            border-radius: 4px;
+            transition: height 0.3s;
         }
         
-        /* เปลี่ยนพื้นหลังของแผนที่ทั้งหมดให้เป็นสีน้ำเงินเข้มตามธีม */
-        #map { 
-            height: 100vh; 
-            width: 100%; 
-            background-color: var(--bg-dark-blue) !important;
-            z-index: 1; 
-        }
-
-        /* --- แบนเนอร์หัวข้อด้านบน (ถอดแบบจากแผ่นป้าย) --- */
-        .map-header {
+        .progress-line {
             position: absolute;
-            top: 0; left: 0; width: 100%;
-            text-align: center;
-            padding: 15px 0;
-            color: white;
-            z-index: 1000;
-            background: linear-gradient(to bottom, rgba(11,36,71,1) 70%, rgba(11,36,71,0) 100%);
-            pointer-events: none;
+            width: 4px;
+            border-radius: 4px;
+            height: 0;
+            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
         }
-        .map-header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
-        .map-header p { margin: 2px 0 0 0; font-size: 13px; color: #93c5fd; opacity: 0.9; }
+        
+        .track-1 { left: 14px; } 
+        .track-2 { left: 38px; } 
+        
+        .prog-1 { background: var(--s1-color); box-shadow: 0 0 10px var(--s1-color); }
+        .prog-2 { background: var(--s2-color); box-shadow: 0 0 10px var(--s2-color); }
 
-        /* --- UI PANEL ควบคุมรถ --- */
-        .ui-panel {
-            position: absolute;
-            bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 380px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: var(--shadow-soft);
-            z-index: 1000;
-            padding: 14px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-track {
-            border: none; padding: 12px; border-radius: 12px; color: white; cursor: pointer;
-            font-family: 'Kanit', sans-serif; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s;
-        }
-        .btn-track:active { transform: scale(0.95); }
-        .btn-blue { background: linear-gradient(135deg, #1e40af, #3b82f6); }
-        .btn-pink { background: linear-gradient(135deg, #be185d, #f472b6); }
-
-        /* --- สไตล์หมุดสถานี (วงกลมเหลือง + ข้อความขาว) --- */
-        .station-container {
+        /* --- LIST STATIONS --- */
+        .stop-item {
+            position: relative;
             display: flex;
-            flex-direction: column;
+            align-items: flex-start;
+            min-height: 65px;
+            z-index: 2;
+        }
+
+        .tracks-box {
+            width: 60px;
+            display: flex;
+            position: relative;
+            flex-shrink: 0;
+            height: 100%;
+            padding-top: 4px;
+        }
+
+        .dot-wrapper {
+            position: absolute;
+            width: 20px; height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .dw-1 { left: 6px; }  
+        .dw-2 { left: 30px; } 
+
+        /* ออกแบบ Dot ใหม่ให้แสดงตัวเลขวงกลมเหลืองแบบในอินโฟกราฟิก */
+        .dot {
+            width: 16px; height: 16px;
+            background: #112540; 
+            border: 2px solid var(--line-inactive);
+            border-radius: 50%;
+            transition: all 0.3s;
+            z-index: 2;
+            box-sizing: border-box;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 120px !important;
-            margin-left: -60px; /* จัดกึ่งกลางหมุด */
-            margin-top: -30px;
-            text-align: center;
-        }
-        .station-marker-circle {
-            width: 24px; height: 24px;
-            background-color: var(--station-yellow);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; color: #000;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        }
-        .station-marker-text {
-            color: #ffffff;
-            font-size: 11px;
-            font-weight: 400;
-            margin-top: 4px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
-            white-space: normal;
-            width: 130px;
-            line-height: 1.2;
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-sub);
         }
 
-        /* ซ่อนไอคอนเริ่มต้นของ Leaflet ลิขสิทธิ์ด้านล่าง */
-        .leaflet-control-attribution { display: none !important; }
+        /* Active/Passed State: กลายเป็นวงกลมเหลืองตัวอักษรดำตามภาพเป๊ะๆ */
+        .dot.active-1 { background: var(--station-yellow); border-color: var(--station-yellow); color: #000000; box-shadow: 0 0 8px var(--station-yellow); }
+        .dot.active-2 { background: var(--station-yellow); border-color: var(--station-yellow); color: #000000; box-shadow: 0 0 8px var(--station-yellow); }
+
+        /* BUS ICON */
+        .bus-icon {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            position: absolute;
+            z-index: 10;
+            transform: scale(0);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .bus-icon.show { transform: scale(1); }
+        .bus-1 { background: var(--s1-color); box-shadow: 0 0 12px var(--s1-color); }
+        .bus-2 { background: var(--s2-color); box-shadow: 0 0 12px var(--s2-color); }
+
+        .content {
+            flex-grow: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .content h3 { margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: 400; line-height: 1.4; transition: all 0.3s; }
+        
+        /* สไตล์เวลาไฮไลต์จุดที่รถจอดอยู่ */
+        .stop-highlight .content h3 { 
+            color: #ffffff; 
+            font-weight: 600; 
+            font-size: 15px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .stop-item:last-child .content { border-bottom: none; }
+
+        .pulse-ring {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            animation: pulse 2s infinite; z-index: -1;
+        }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="map-header">
-        <h1>SALAYA ONE</h1>
-        <p>Shuttle Service Route</p>
-    </div>
+    <div class="card">
+        <div class="header">
+            <h2>SALAYA ONE</h2>
+            <p>Shuttle Service Route</p>
+        </div>
 
-    <div class="ui-panel">
-        <div class="control-grid">
-            <button class="btn-track btn-blue" onclick="focusVan('van1')">🚍 คันที่ 1</button>
-            <button class="btn-track btn-pink" onclick="focusVan('van2')">🚍 คันที่ 2</button>
+        <div class="status-legend">
+            <div class="legend-item">
+                <div class="dot-legend" style="background: var(--s1-color);"></div>
+                <span style="color: var(--s1-color);">Shuttle 1</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot-legend" style="background: var(--s2-color);"></div>
+                <span style="color: var(--s2-color);">Shuttle 2</span>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <div class="rails-layer">
+                <div class="rail-line track-1" id="gray-rail-1"></div>
+                <div class="progress-line track-1 prog-1" id="prog-rail-1"></div>
+
+                <div class="rail-line track-2" id="gray-rail-2"></div>
+                <div class="progress-line track-2 prog-2" id="prog-rail-2"></div>
+            </div>
+
+            <div id="stops-container"></div>
         </div>
     </div>
 
-    <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // 1. Config Firebase 
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -138,135 +252,143 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. ตั้งค่าระบบแผนที่แบบกระดานวาดรูปอิสระ (Simple CRS) ไม่ใช้แผนที่โลก
-        const map = L.map('map', {
-            crs: L.CRS.Simple,
-            minZoom: -1,
-            maxZoom: 2,
-            zoomControl: false
-        });
+        const stationNames = [
+            "Salaya One Hotel & Serviced Apartment",
+            "1. College of Music", 
+            "2.1 Faculty of Science 3",
+            "2.2 Faculty of Science 2", 
+            "3. Faculty of Social Sciences and Humanities", 
+            "4. New MUIC Building",
+            "5. Old MUIC Building", 
+            "6. Office of President", 
+            "7. Faculty of Engineering",
+            "8. ICT", 
+            "9. Faculty of Medical Technology", 
+            "10. Physical and Medical Technology Building",
+            "11. Faculty of Liberal Arts", 
+            "12. Electric Mini-Bus",
+            "13. Faculty of Veterinary Science", 
+            "14. MUIDS"
+        ];
 
-        // กำหนดขอบเขตขนาดของกระดานจำลอง (กว้าง 1000 x สูง 800)
-        const mapBounds = [[0, 0], [800, 1000]];
-        map.fitBounds(mapBounds);
+        // ตัวเลข/สัญลักษณ์แมปปิ้งภายในหมุดวงกลมเหลือง (อ้างอิงจากภาพอินโฟกราฟิกของคุณ)
+        const dotLabels = ["★", "1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
 
-        // 3. 🛣️ ฟังก์ชันสำหรับสร้างถนน (วาดเส้นขาวหนา แล้วทับด้วยเส้นประแดงบางๆ)
-        function drawRoad(points) {
-            // เส้นพื้นถนนสีขาวด้านล่าง
-            L.polyline(points, {
-                color: '#ffffff',
-                weight: 22,
-                lineCap: 'round',
-                lineJoin: 'round',
-                opacity: 1
-            }).addTo(map);
+        const container = document.getElementById('stops-container');
 
-            // เส้นประสีแดงตรงกลางถนน
-            L.polyline(points, {
-                color: '#e11d48',
-                weight: 2,
-                dashArray: '6, 8',
-                lineCap: 'butt',
-                lineJoin: 'round',
-                opacity: 1
-            }).addTo(map);
+        function renderTimeline() {
+            container.innerHTML = '';
+            stationNames.forEach((name, index) => {
+                const currentLabel = dotLabels[index] || index;
+                container.innerHTML += `
+                    <div class="stop-item" id="row-${index}">
+                        <div class="tracks-box">
+                            <div class="dot-wrapper dw-1" id="dw-v1-${index}">
+                                <div class="dot" id="dot-v1-${index}">${currentLabel}</div>
+                                <div class="bus-icon bus-1" id="bus-v1-${index}">
+                                    <div class="pulse-ring" style="background: rgba(59, 130, 246, 0.5);"></div>
+                                    <i class="fas fa-shuttle-van"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="dot-wrapper dw-2" id="dw-v2-${index}">
+                                <div class="dot" id="dot-v2-${index}">${currentLabel}</div>
+                                <div class="bus-icon bus-2" id="bus-v2-${index}">
+                                    <div class="pulse-ring" style="background: rgba(236, 72, 153, 0.5);"></div>
+                                    <i class="fas fa-shuttle-van"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <h3>${name}</h3>
+                        </div>
+                    </div>
+                `;
+            });
+            setTimeout(drawGrayRails, 100); 
         }
+        renderTimeline();
 
-        // วาดบล็อกโครงข่ายถนนตามโครงสร้างผังในภาพ
-        drawRoad([[430, 900], [430, 680], [350, 680], [350, 580], [620, 580], [620, 830], [720, 830], [720, 540], [540, 540], [540, 430]]); 
-        drawRoad([[540, 430], [620, 430], [620, 290], [480, 290], [480, 430], [180, 430], [180, 120], [480, 120], [480, 220], [620, 220]]);
-        drawRoad([[480, 220], [330, 220], [330, 330], [180, 330]]);
-        drawRoad([[180, 220], [100, 220], [100, 620], [180, 620]]);
+        function setRailPosition(railElement, startDotId, endDotId) {
+            const startEl = document.getElementById(startDotId);
+            const endEl = document.getElementById(endDotId);
+            const containerEl = document.querySelector('.timeline-container');
 
-        // 4. 📍 ข้อมูลตำแหน่งจำลอง (Y, X) และชื่อของทั้ง 14 สถานี บนผังระบบเวกเตอร์
-        const stations = {
-            "station_main": { id: "★", name: "Salaya One Apartment", pos: [680, 250], realLat: 13.801307, realLng: 100.311848 },
-            "station1":  { id: "1",  name: "College of Music", pos: [470, 750], realLat: 13.788904, realLng: 100.323890 },
-            "station2":  { id: "2",  name: "Faculty of Science", pos: [400, 500], realLat: 13.792808, realLng: 100.323284 },
-            "station3":  { id: "3",  name: "Social Sciences", pos: [480, 500], realLat: 13.792213, realLng: 100.324868 },
-            "station4":  { id: "4",  name: "MUIC Building 2", pos: [670, 750], realLat: 13.790603, realLng: 100.326429 },
-            "station5":  { id: "5",  name: "MUIC Building 1", pos: [670, 480], realLat: 13.792825, realLng: 100.326047 },
-            "station6":  { id: "6",  name: "Campus Building", pos: [670, 350], realLat: 13.793753, realLng: 100.324804 },
-            "station7":  { id: "7",  name: "Faculty of Engineering", pos: [570, 350], realLat: 13.796311, realLng: 100.324913 },
-            "station8":  { id: "8",  name: "ICT Technology", pos: [380, 410], realLat: 13.794468, realLng: 100.324706 },
-            "station9":  { id: "9",  name: "Medical Technology", pos: [400, 160], realLat: 13.797597, realLng: 100.322024 },
-            "station10": { id: "10", name: "Physical & Med Tech", pos: [300, 160], realLat: 13.798710, realLng: 100.323089 },
-            "station11": { id: "11", name: "Faculty of Liberal Arts", pos: [260, 330], realLat: 13.797282, realLng: 100.320915 },
-            "station12": { id: "12", name: "Electric Mini-Bus", pos: [260, 520], realLat: 13.794816, realLng: 100.318838 },
-            "station13": { id: "13", name: "Faculty of Veterinary", pos: [140, 410], realLat: 13.798234, realLng: 100.317760 },
-            "station14": { id: "14", name: "MUIDS โรงเรียนสาธิต", pos: [530, 100], realLat: 13.799975, realLng: 100.323632 }
-        };
+            if (startEl && endEl && containerEl) {
+                const containerRect = containerEl.getBoundingClientRect();
+                const startRect = startEl.getBoundingClientRect();
+                const endRect = endEl.getBoundingClientRect();
 
-        // วาดหมุดสถานีลงบนแผนที่เวกเตอร์
-        Object.keys(stations).forEach(key => {
-            const st = stations[key];
-            const customHtml = `
-                <div class="station-container">
-                    <div class="station-marker-circle">${st.id}</div>
-                    <div class="station-marker-text">${st.name}</div>
-                </div>
-            `;
-            const stationIcon = L.divIcon({ html: customHtml, className: '', iconSize: [0, 0] });
-            L.marker(st.pos, { icon: stationIcon }).addTo(map);
-        });
+                const startTop = (startRect.top - containerRect.top) + (startRect.height / 2);
+                const distance = (endRect.top - startRect.top); 
 
-        // 5. 🚐 ตั้งค่าระบบตัวรถที่จะวิ่งเคลื่อนไหวบนหน้าจอ
-        const iconBlue = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png', iconSize: [46, 46], iconAnchor: [23, 23] });
-        const iconPink = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386456.png', iconSize: [46, 46], iconAnchor: [23, 23] });
-
-        const vans = {
-            van1: { marker: null, icon: iconBlue },
-            van2: { marker: null, icon: iconPink }
-        };
-
-        function focusVan(id) {
-            if (vans[id].marker) {
-                map.panTo(vans[id].marker.getLatLng());
-            } else {
-                alert("รถคันนี้ยังไม่ส่งสัญญาณเข้าสู่ระบบในผังจำลองครับ");
+                railElement.style.top = `${startTop}px`;
+                railElement.style.height = `${distance}px`;
             }
         }
 
-        // 🎯 ฟังก์ชันเด็ด: คำนวณหาว่าพิกัด GPS จริงบนโลก อยู่ใกล้สถานีไหนมากที่สุด แล้วดึงรถมาแสดงที่พิกัดบนรูปผังจำลองให้ตรงจุด
-        function getMappedSchematicPosition(realLat, realLng) {
-            let closestStation = null;
-            let minDistance = Infinity;
-
-            Object.keys(stations).forEach(key => {
-                const st = stations[key];
-                // คำนวณระยะห่างแบบง่าย (Euclidean Distance)
-                const dist = Math.sqrt(Math.pow(realLat - st.realLat, 2) + Math.pow(realLng - st.realLng, 2));
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    closestStation = st;
-                }
-            });
-
-            // คืนค่าตำแหน่ง [Y, X] บนผังจำลองของสถานีที่อยู่ใกล้ตัวรถที่สุด
-            return closestStation ? closestStation.pos : [680, 250];
+        function drawGrayRails() {
+            const lastIdx = stationNames.length - 1;
+            setRailPosition(document.getElementById('gray-rail-1'), 'dw-v1-0', `dw-v1-${lastIdx}`);
+            setRailPosition(document.getElementById('gray-rail-2'), 'dw-v2-0', `dw-v2-${lastIdx}`);
         }
 
-        // 🔄 ดึงข้อมูลพิกัด Realtime จาก Firebase มารันบนแผนที่เวกเตอร์แบบไม่ต้องพึ่งรูปภาพ
-        function trackShuttle(id) {
-            db.ref('shuttles/' + id).on('value', (snap) => {
-                const data = snap.val();
-                const v = vans[id];
+        let lastData = { van1: { active: false }, van2: { active: false } };
 
-                if (data && data.active) {
-                    // แปลงค่าพิกัดจริงเข้าสู่ผังกราฟิกจำลอง
-                    const schematicPos = getMappedSchematicPosition(data.lat, data.lng);
-                    
-                    if (!v.marker) {
-                        v.marker = L.marker(schematicPos, { icon: v.icon }).addTo(map);
-                    } else {
-                        v.marker.setLatLng(schematicPos);
+        function updateState(vanId, data) {
+            const currentStop = data.currentStop || 0;
+            const isActive = data.active;
+            const totalStops = stationNames.length;
+            
+            const progressEl = document.getElementById(vanId === 'van1' ? 'prog-rail-1' : 'prog-rail-2');
+            
+            if (isActive && currentStop >= 0) {
+                setRailPosition(progressEl, 
+                    vanId === 'van1' ? 'dw-v1-0' : 'dw-v2-0', 
+                    vanId === 'van1' ? `dw-v1-${currentStop}` : `dw-v2-${currentStop}`
+                );
+            } else {
+                progressEl.style.height = '0px';
+            }
+
+            for (let i = 0; i < totalStops; i++) {
+                const dot = document.getElementById(vanId === 'van1' ? `dot-v1-${i}` : `dot-v2-${i}`);
+                const bus = document.getElementById(vanId === 'van1' ? `bus-v1-${i}` : `bus-v2-${i}`);
+                const row = document.getElementById(`row-${i}`);
+                const activeClass = vanId === 'van1' ? 'active-1' : 'active-2';
+
+                dot.classList.remove(activeClass);
+                dot.style.opacity = '1';
+                bus.classList.remove('show');
+
+                if (isActive) {
+                    if (i < currentStop) {
+                        dot.classList.add(activeClass); 
+                    } else if (i === currentStop) {
+                        dot.style.opacity = '0'; 
+                        bus.classList.add('show');
+                        row.classList.add('stop-highlight');
                     }
                 }
-            });
+            }
         }
 
-        trackShuttle('van1');
-        trackShuttle('van2');
+        db.ref('shuttles').on('value', (snapshot) => {
+            const data = snapshot.val();
+            document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('stop-highlight'));
+
+            if (data) {
+                lastData = data; 
+                if (data.van1) updateState('van1', data.van1);
+                if (data.van2) updateState('van2', data.van2);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            drawGrayRails(); 
+            if (lastData.van1) updateState('van1', lastData.van1); 
+            if (lastData.van2) updateState('van2', lastData.van2);
+        });
 
     </script>
 </body>
