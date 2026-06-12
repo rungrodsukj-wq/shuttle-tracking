@@ -154,41 +154,31 @@
             <div class="legend-item"><div class="legend-dot" style="background: var(--s2-color);"></div> Shuttle 2</div>
         </div>
 
-        <!-- กล่องแผนที่โครงข่ายถนนจำลอง -->
         <div class="map-canvas-wrapper">
             <svg viewBox="0 0 400 500" id="vector-map">
-                <!-- 1. วาดเลเยอร์พื้นถนนสีขาวหนาด้านล่าง -->
                 <g id="road-base-layer" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- ประตู 1 วิ่งเข้าหาจุด 1 ลูบขึ้นด้านบน -->
-                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 220 110 L 220 150" />
-                    <!-- โครงสร้างถนนโซนกลางและโซนซ้ายสเน็คคดเคี้ยวตามภาพโปสเตอร์ -->
+                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 40 110 L 40 80" />
                     <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
-                    <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
-                    <!-- ประตู 5 และต่อถนนขึ้นไปด้านบนสุดเพื่อรองรับ Salaya One (★) -->
-                    <path d="M 40 85 L 40 190" stroke-width="12" />
-                    <path d="M 40 165 L 75 165" stroke-width="3" stroke="#e11d48" />
+                    <path d="M 140 230 L 40 230 L 40 150" />
+                    <path d="M 40 230 L 40 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
                 </g>
 
-                <!-- 2. วาดเลเยอร์เส้นประสีแดงตรงกลางถนนเพื่อให้เหมือนภาพต้นฉบับ -->
                 <g id="road-dash-layer" fill="none" stroke="#e11d48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4, 5">
-                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 220 110 L 220 150" />
+                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 40 110 L 40 80" />
                     <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
-                    <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
-                    <path d="M 40 85 L 40 190" stroke-width="1" />
+                    <path d="M 140 230 L 40 230 L 40 150" />
+                    <path d="M 40 230 L 40 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
                 </g>
 
-                <!-- 3. วาดข้อความกำกับสถานที่/ประตูต่างๆ บนผังอินโฟกราฟิก -->
                 <g id="decorations">
                     <text x="300" y="245" class="gate-text">≪ ENTRANCE GATE 1</text>
                     <text x="200" y="395" class="gate-text">≪ EXIT GATE 6</text>
-                    <text x="20" y="125" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS)</text>
+                    <text x="60" y="145" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS Area)</text>
                 </g>
 
-                <!-- 4. ส่วนสร้างหมุดสถานีวงกลมสีเหลืองพร้อมข้อความชื่อจุดจอด -->
                 <g id="stations-group"></g>
             </svg>
 
-            <!-- 5. ชั้นสำหรับแสดงรถรับส่ง (Bus Layer) วิ่งอยู่เหนือแผ่นป้าย -->
             <div class="bus-layer">
                 <div class="shuttle-bus bus-v1" id="dom-bus-v1">
                     <div class="pulse-ring" style="background: rgba(59, 130, 246, 0.4);"></div>
@@ -206,7 +196,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // 1. กำหนดค่าเชื่อมต่อ Firebase
+        // 1. กำหนดค่าเชื่อมต่อ Firebase (เหมือนชุดเดิมทุกประการ)
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -219,9 +209,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. ข้อมูลพิกัด (X, Y) ย้าย Salaya One Apartment (★) ไปไว้ที่ x: 40, y: 95 (ด้านบน Gate 5) เรียบร้อย
+        // 2. ข้อมูลพิกัด (X, Y) จัดตำแหน่งหมุดฝั่งซ้ายใหม่ให้สัมพันธ์กับถนนที่แยกขาดจากกัน
         const stationMetadata = [
-            { id: "★", x: 40,  y: 95,  name: "Salaya One Apartment", textX: 20,  textY: 75 },
+            { id: "★", x: 40,  y: 95,  name: "Salaya One Apartment", textX: 60,  textY: 100 },
             { id: "1",  x: 250, y: 200, name: "College of Music", textX: 215, textY: 215 },
             { id: "2",  x: 220, y: 150, name: "Faculty of Science", textX: 235, textY: 153 },
             { id: "3",  x: 220, y: 125, name: "Faculty of Social Sciences", textX: 235, textY: 128 },
@@ -230,28 +220,24 @@
             { id: "6",  x: 240, y: 110, name: "Campus Building", textX: 215, textY: 98 },
             { id: "7",  x: 170, y: 160, name: "Faculty of Engineering", textX: 125, textY: 150 },
             { id: "8",  x: 170, y: 230, name: "ICT Technology", textX: 175, textY: 245 },
-            { id: "9",  x: 90,  y: 230, name: "Faculty of Medical Tech", textX: 45,  textY: 218 },
-            { id: "10", x: 50,  y: 260, name: "Physical & Med Tech", textX: 45,  textY: 310 },
-            { id: "11", x: 130, y: 310, name: "Faculty of Liberal Arts", textX: 65,  textY: 325 },
+            { id: "9",  x: 90,  y: 230, name: "Faculty of Medical Tech", textX: 90,  textY: 215 },
+            { id: "10", x: 40,  y: 260, name: "Physical & Med Tech", textX: 60,  textY: 264 },
+            { id: "11", x: 130, y: 310, name: "Faculty of Liberal Arts", textX: 145, textY: 314 },
             { id: "12", x: 190, y: 340, name: "Electric Mini-Bus", textX: 160, textY: 358 },
             { id: "13", x: 170, y: 420, name: "Faculty of Veterinary", textX: 135, textY: 440 },
-            { id: "14", x: 40,  y: 165, name: "MUIDS โรงเรียนสาธิต", textX: 20,  textY: 200 }
+            { id: "14", x: 40,  y: 170, name: "MUIDS โรงเรียนสาธิต", textX: 60,  textY: 174 }
         ];
 
-        // 3. ฟังก์ชันเรนเดอร์หมุดวงกลมสีเหลืองและข้อความลงใน SVG บอร์ดแบบไดนามิก
+        // 3. ฟังก์ชันเรนเดอร์หมุดวงกลมสีเหลืองและข้อความลงใน SVG
         function renderVectorStations() {
             const group = document.getElementById('stations-group');
             let htmlContent = '';
 
             stationMetadata.forEach((st, index) => {
                 htmlContent += `
-                    <!-- กลุ่มหมุดสถานีแต่ละจุด -->
                     <g id="svg-st-group-${index}">
-                        <!-- เส้นผ่านศูนย์กลางวงกลมเหลืองตัวอักษรดำตามภาพ -->
                         <circle cx="${st.x}" cy="${st.y}" r="8" fill="#facc15" stroke="#0b2447" stroke-width="1.5" />
                         <text x="${st.x}" y="${st.y + 3}" font-family="'Inter'" font-size="8" font-weight="700" fill="#000000" text-anchor="middle">${st.id}</text>
-                        
-                        <!-- ชื่อข้อความสถานีระบุพิกัดแยกส่วนป้องกันการซ้อนทับ -->
                         <text x="${st.textX}" y="${st.textY}" id="svg-text-${index}" class="svg-station-text">${st.name}</text>
                     </g>
                 `;
@@ -260,34 +246,29 @@
         }
         renderVectorStations();
 
-        // 4. ฟังก์ชันหลักสำหรับแปลงตำแหน่งพิกเซลจาก SVG ให้กลายเป็นค่าร้อยละ (%) เพื่อสั่งงานกล่อง Bus Layer (HTML Div)
+        // 4. ฟังก์ชันสำหรับคำนวณตำแหน่งและเคลื่อนย้ายรถใน HTML Layer
         function positionBusOnCanvas(busElement, stopIndex) {
             const coord = stationMetadata[stopIndex];
             const svgEl = document.getElementById('vector-map');
             
             if (coord && busElement && svgEl) {
-                // อ้างอิงจากขนาดช่อง ViewBox [กว้าง 400 x สูง 500] 
                 const pctX = (coord.x / 400) * 100;
                 const pctY = (coord.y / 500) * 100;
-
-                // ใส่ค่าตำแหน่งลงไป รถจะสไลด์ตัววิ่งไปตามถนนอย่างสวยงาม
                 busElement.style.left = `${pctX}%`;
                 busElement.style.top = `${pctY}%`;
             }
         }
 
-        // 5. จัดการอัปเดตสถานะ Active และไฮไลต์ข้อความสว่างเรืองแสงเมื่อรถวิ่งมาถึง
+        // 5. จัดการอัปเดตสถานะ Active และไฮไลต์ข้อความสว่างเรืองแสง
         function updateBusState(vanId, data) {
             const currentStop = data.currentStop || 0;
             const isActive = data.active;
             const busDom = document.getElementById(vanId === 'van1' ? 'dom-bus-v1' : 'dom-bus-v2');
             
             if (isActive && currentStop >= 0 && currentStop < stationMetadata.length) {
-                // คำนวณเคลื่อนที่รถรับส่ง
                 positionBusOnCanvas(busDom, currentStop);
                 busDom.classList.add('active-run');
 
-                // ไฮไลต์ข้อความใน SVG จุดจอดนั้นๆ ให้สว่างขึ้นมาเด่นชัด
                 const textDom = document.getElementById(`svg-text-${currentStop}`);
                 if (textDom) textDom.classList.add('active-target-text');
             } else {
@@ -295,11 +276,10 @@
             }
         }
 
-        // 6. เชื่อมต่อระบบ Firebase Realtime Stream Data
+        // 6. ดึงข้อมูลจาก Firebase Realtime Database
         db.ref('shuttles').on('value', (snapshot) => {
             const data = snapshot.val();
             
-            // ล้างค่าไฮไลต์เก่าออกก่อนทุกครั้งที่ข้อมูลเปลี่ยน
             document.querySelectorAll('.svg-station-text').forEach(el => {
                 el.classList.remove('active-target-text');
             });
