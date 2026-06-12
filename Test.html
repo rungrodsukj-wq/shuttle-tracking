@@ -3,236 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shuttle Tracker - Salaya One Premium Theme</title>
+    <title>Salaya One - Premium Schematic Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-color: #051329;       /* สีกรมท่ามืดลึก */
-            --card-bg: #0b2447;        /* สีกรมท่าหลักตามภาพโปสเตอร์ */
-            --text-main: #ffffff;
-            --text-sub: #64748b;
-            --line-inactive: #1e3a8a;  /* รางวิ่งตอนออฟไลน์ */
-            --s1-color: #3B82F6;       /* รถคันที่ 1 สีฟ้า */
-            --s1-light: rgba(59, 130, 246, 0.4);
-            --s2-color: #EC4899;       /* รถคันที่ 2 สีชมพู */
-            --s2-light: rgba(236, 72, 153, 0.4);
+            --bg-dark: #051329;        /* สีกรมท่ามืดลึกพื้นหลัง */
+            --map-bg: #0b2447;         /* สีกรมท่าสว่างตามแผ่นป้ายหลัก */
             --station-yellow: #facc15; /* สีเหลืองสว่างตามหมุดในภาพ */
+            --road-white: #ffffff;
+            --road-dash: #e11d48;      /* เส้นประสีแดงตรงกลางถนน */
+            --s1-color: #3B82F6;       /* สีรถคันที่ 1 (ฟ้า) */
+            --s2-color: #EC4899;       /* สีรถคันที่ 2 (ชมพู) */
         }
 
         body {
             font-family: 'Inter', 'Kanit', sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
+            box-sizing: border-box;
         }
 
-        .card {
-            background: var(--card-bg);
+        /* กล่องการ์ดหลักดีไซน์ตามกรอบแผ่นป้ายในภาพ */
+        .map-card {
+            background: var(--map-bg);
             width: 100%;
-            max-width: 450px;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            padding: 25px;
+            max-width: 500px;
+            border-radius: 28px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            padding: 20px;
             position: relative;
-            border: 1.5px solid rgba(255, 255, 255, 0.15); /* เส้นกรอบบางๆ แบบในภาพ */
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
         }
 
-        .header {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        /* ส่วนหัวข้อแบนเนอร์ */
+        .map-header {
             text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
         }
-        .header h2 { 
-            margin: 0; 
-            font-size: 22px; 
-            color: var(--text-main); 
-            font-weight: 700; 
-            letter-spacing: 0.5px;
-        }
-        .header p {
-            margin: 4px 0 0 0;
-            font-size: 12px;
-            color: var(--station-yellow);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
+        .map-header h2 { margin: 0; font-size: 22px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px; }
+        .map-header p { margin: 3px 0 0 0; font-size: 11px; color: var(--station-yellow); letter-spacing: 1px; font-weight: 500; }
 
-        .status-legend {
+        /* ตัวบ่งชี้สถานะรถ */
+        .legend-bar {
             display: flex;
             justify-content: center;
             gap: 20px;
             font-size: 12px;
-            margin-bottom: 25px;
             background: rgba(0, 0, 0, 0.2);
-            padding: 8px;
+            padding: 6px;
             border-radius: 12px;
+            margin-bottom: 15px;
+            color: #fff;
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-        .dot-legend { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-        /* --- TIMELINE CORE --- */
-        .timeline-container {
+        /* --- ผังแผนที่ระบบเวกเตอร์ (SVG Container) --- */
+        .map-canvas-wrapper {
             position: relative;
-            padding-left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 18px;
+            overflow: visible;
         }
 
-        .rails-layer {
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            overflow: visible;
+        }
+
+        /* ข้อความป้ายสถานีในแผนที่ */
+        .svg-station-text {
+            font-family: 'Kanit', sans-serif;
+            font-size: 10px;
+            fill: rgba(255, 255, 255, 0.85);
+            font-weight: 400;
+            transition: all 0.3s;
+        }
+        .active-target-text {
+            fill: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 11px;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+
+        /* ตกแต่งตัวอักษรเกทประตูและข้อความพิเศษ */
+        .gate-text {
+            font-family: 'Kanit', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            fill: #60a5fa;
+        }
+
+        /* --- 🚐 ไอคอนรถรับส่งแบบเคลื่อนที่สมูท --- */
+        .bus-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
-            z-index: 0; 
         }
 
-        .rail-line {
+        .shuttle-bus {
             position: absolute;
-            width: 4px;
-            background: var(--line-inactive);
-            border-radius: 4px;
-            transition: height 0.3s;
-        }
-        
-        .progress-line {
-            position: absolute;
-            width: 4px;
-            border-radius: 4px;
-            height: 0;
-            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-        }
-        
-        .track-1 { left: 14px; } 
-        .track-2 { left: 38px; } 
-        
-        .prog-1 { background: var(--s1-color); box-shadow: 0 0 10px var(--s1-color); }
-        .prog-2 { background: var(--s2-color); box-shadow: 0 0 10px var(--s2-color); }
-
-        /* --- LIST STATIONS --- */
-        .stop-item {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            min-height: 65px;
-            z-index: 2;
-        }
-
-        .tracks-box {
-            width: 60px;
-            display: flex;
-            position: relative;
-            flex-shrink: 0;
-            height: 100%;
-            padding-top: 4px;
-        }
-
-        .dot-wrapper {
-            position: absolute;
-            width: 20px; height: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .dw-1 { left: 6px; }  
-        .dw-2 { left: 30px; } 
-
-        /* ออกแบบ Dot ใหม่ให้แสดงตัวเลขวงกลมเหลืองแบบในอินโฟกราฟิก */
-        .dot {
-            width: 16px; height: 16px;
-            background: #112540; 
-            border: 2px solid var(--line-inactive);
-            border-radius: 50%;
-            transition: all 0.3s;
-            z-index: 2;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 9px;
-            font-weight: 700;
-            color: var(--text-sub);
-        }
-
-        /* Active/Passed State: กลายเป็นวงกลมเหลืองตัวอักษรดำตามภาพเป๊ะๆ */
-        .dot.active-1 { background: var(--station-yellow); border-color: var(--station-yellow); color: #000000; box-shadow: 0 0 8px var(--station-yellow); }
-        .dot.active-2 { background: var(--station-yellow); border-color: var(--station-yellow); color: #000000; box-shadow: 0 0 8px var(--station-yellow); }
-
-        /* BUS ICON */
-        .bus-icon {
-            width: 32px; height: 32px;
+            width: 30px; height: 30px;
             border-radius: 50%;
             color: white;
             display: flex; align-items: center; justify-content: center;
             font-size: 13px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            position: absolute;
-            z-index: 10;
-            transform: scale(0);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+            /* สั่งให้รถวิ่งขยับตามโค้งถนนอย่างสมูทนุ่มนวล */
+            transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1), top 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s;
         }
-        .bus-icon.show { transform: scale(1); }
-        .bus-1 { background: var(--s1-color); box-shadow: 0 0 12px var(--s1-color); }
-        .bus-2 { background: var(--s2-color); box-shadow: 0 0 12px var(--s2-color); }
-
-        .content {
-            flex-grow: 1;
-            padding-left: 12px;
-            padding-top: 2px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-        .content h3 { margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); font-weight: 400; line-height: 1.4; transition: all 0.3s; }
+        .shuttle-bus.active-run { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         
-        /* สไตล์เวลาไฮไลต์จุดที่รถจอดอยู่ */
-        .stop-highlight .content h3 { 
-            color: #ffffff; 
-            font-weight: 600; 
-            font-size: 15px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-
-        .stop-item:last-child .content { border-bottom: none; }
+        .bus-v1 { background: var(--s1-color); box-shadow: 0 0 15px var(--s1-color); }
+        .bus-v2 { background: var(--s2-color); box-shadow: 0 0 15px var(--s2-color); }
 
         .pulse-ring {
             position: absolute; width: 100%; height: 100%; border-radius: 50%;
-            animation: pulse 2s infinite; z-index: -1;
+            animation: busGlow 2s infinite; z-index: -1;
         }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
+        @keyframes busGlow { 
+            0% { transform: scale(1); opacity: 0.6; } 
+            100% { transform: scale(2.2); opacity: 0; } 
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div class="header">
+    <div class="map-card">
+        <div class="map-header">
             <h2>SALAYA ONE</h2>
             <p>Shuttle Service Route</p>
         </div>
 
-        <div class="status-legend">
-            <div class="legend-item">
-                <div class="dot-legend" style="background: var(--s1-color);"></div>
-                <span style="color: var(--s1-color);">Shuttle 1</span>
-            </div>
-            <div class="legend-item">
-                <div class="dot-legend" style="background: var(--s2-color);"></div>
-                <span style="color: var(--s2-color);">Shuttle 2</span>
-            </div>
+        <div class="legend-bar">
+            <div class="legend-item"><div class="legend-dot" style="background: var(--s1-color);"></div> Shuttle 1</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--s2-color);"></div> Shuttle 2</div>
         </div>
 
-        <div class="timeline-container">
-            <div class="rails-layer">
-                <div class="rail-line track-1" id="gray-rail-1"></div>
-                <div class="progress-line track-1 prog-1" id="prog-rail-1"></div>
+        <!-- กล่องแผนที่โครงข่ายถนนจำลอง -->
+        <div class="map-canvas-wrapper">
+            <svg viewBox="0 0 400 500" id="vector-map">
+                <!-- 1. วาดเลเยอร์พื้นถนนสีขาวหนาด้านล่าง -->
+                <g id="road-base-layer" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- ประตู 1 วิ่งเข้าหาจุด 1 ลูบขึ้นด้านบน -->
+                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 220 110 L 220 150" />
+                    <!-- โครงสร้างถนนโซนกลางและโซนซ้ายสเน็คคดเคี้ยวตามภาพโปสเตอร์ -->
+                    <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
+                    <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
+                    <!-- ประตู 5 พิเศษโรงเรียนสาธิต MUIDS ด้านซ้าย -->
+                    <path d="M 40 140 L 40 190" stroke-width="12" />
+                    <path d="M 40 165 L 75 165" stroke-width="3" stroke="#e11d48" />
+                </g>
 
-                <div class="rail-line track-2" id="gray-rail-2"></div>
-                <div class="progress-line track-2 prog-2" id="prog-rail-2"></div>
+                <!-- 2. วาดเลเยอร์เส้นประสีแดงตรงกลางถนนเพื่อให้เหมือนภาพต้นฉบับ -->
+                <g id="road-dash-layer" fill="none" stroke="#e11d48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4, 5">
+                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 220 110 L 220 150" />
+                    <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
+                    <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
+                    <path d="M 40 140 L 40 190" stroke-width="1" />
+                </g>
+
+                <!-- 3. วาดข้อความกำกับสถานที่/ประตูต่างๆ บนผังอินโฟกราฟิก -->
+                <g id="decorations">
+                    <text x="300" y="245" class="gate-text">≪ ENTRANCE GATE 1</text>
+                    <text x="200" y="395" class="gate-text">≪ EXIT GATE 6</text>
+                    <text x="20" y="130" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS)</text>
+                </g>
+
+                <!-- 4. ส่วนสร้างหมุดสถานีวงกลมสีเหลืองพร้อมข้อความชื่อจุดจอด -->
+                <g id="stations-group"></g>
+            </svg>
+
+            <!-- 5. ชั้นสำหรับแสดงรถรับส่ง (Bus Layer) วิ่งอยู่เหนือแผ่นป้าย -->
+            <div class="bus-layer">
+                <div class="shuttle-bus bus-v1" id="dom-bus-v1">
+                    <div class="pulse-ring" style="background: rgba(59, 130, 246, 0.4);"></div>
+                    <i class="fas fa-shuttle-van"></i>
+                </div>
+                <div class="shuttle-bus bus-v2" id="dom-bus-v2">
+                    <div class="pulse-ring" style="background: rgba(236, 72, 153, 0.4);"></div>
+                    <i class="fas fa-shuttle-van"></i>
+                </div>
             </div>
-
-            <div id="stops-container"></div>
         </div>
     </div>
 
@@ -240,6 +206,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
+        // 1. กำหนดค่าเชื่อมต่อ Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -252,144 +219,96 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const stationNames = [
-            "Salaya One Hotel & Serviced Apartment",
-            "1. College of Music", 
-            "2.1 Faculty of Science 3",
-            "2.2 Faculty of Science 2", 
-            "3. Faculty of Social Sciences and Humanities", 
-            "4. New MUIC Building",
-            "5. Old MUIC Building", 
-            "6. Office of President", 
-            "7. Faculty of Engineering",
-            "8. ICT", 
-            "9. Faculty of Medical Technology", 
-            "10. Physical and Medical Technology Building",
-            "11. Faculty of Liberal Arts", 
-            "12. Electric Mini-Bus",
-            "13. Faculty of Veterinary Science", 
-            "14. MUIDS"
+        // 2. ข้อมูลพิกัด (X, Y) เปอร์เซ็นต์สำหรับกระจายจุดจอดลงบนผัง SVG ให้เหมือนภาพโปสเตอร์ต้นฉบับ
+        const stationMetadata = [
+            { id: "★", x: 310, y: 200, name: "Salaya One Apartment", textX: 250, textY: 185 },
+            { id: "1",  x: 250, y: 200, name: "College of Music", textX: 215, textY: 215 },
+            { id: "2",  x: 220, y: 150, name: "Faculty of Science", textX: 235, textY: 153 },
+            { id: "3",  x: 220, y: 125, name: "Faculty of Social Sciences", textX: 235, textY: 128 },
+            { id: "4",  x: 350, y: 160, name: "MUIC Building 2", textX: 300, textY: 175 },
+            { id: "5",  x: 290, y: 110, name: "MUIC Building 1", textX: 265, textY: 98 },
+            { id: "6",  x: 240, y: 110, name: "Campus Building", textX: 215, textY: 98 },
+            { id: "7",  x: 170, y: 160, name: "Faculty of Engineering", textX: 125, textY: 150 },
+            { id: "8",  x: 170, y: 230, name: "ICT Technology", textX: 175, textY: 245 },
+            { id: "9",  x: 90,  y: 230, name: "Faculty of Medical Tech", textX: 45,  textY: 218 },
+            { id: "10", x: 50,  y: 260, name: "Physical & Med Tech", textX: 45,  textY: 310 },
+            { id: "11", x: 130, y: 310, name: "Faculty of Liberal Arts", textX: 65,  textY: 325 },
+            { id: "12", x: 190, y: 340, name: "Electric Mini-Bus", textX: 160, textY: 358 },
+            { id: "13", x: 170, y: 420, name: "Faculty of Veterinary", textX: 135, textY: 440 },
+            { id: "14", x: 40,  y: 165, name: "MUIDS โรงเรียนสาธิต", textX: 20,  textY: 205 }
         ];
 
-        // ตัวเลข/สัญลักษณ์แมปปิ้งภายในหมุดวงกลมเหลือง (อ้างอิงจากภาพอินโฟกราฟิกของคุณ)
-        const dotLabels = ["★", "1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
+        // 3. ฟังก์ชันเรนเดอร์หมุดวงกลมสีเหลืองและข้อความลงใน SVG บอร์ดแบบไดนามิก
+        function renderVectorStations() {
+            const group = document.getElementById('stations-group');
+            let htmlContent = '';
 
-        const container = document.getElementById('stops-container');
-
-        function renderTimeline() {
-            container.innerHTML = '';
-            stationNames.forEach((name, index) => {
-                const currentLabel = dotLabels[index] || index;
-                container.innerHTML += `
-                    <div class="stop-item" id="row-${index}">
-                        <div class="tracks-box">
-                            <div class="dot-wrapper dw-1" id="dw-v1-${index}">
-                                <div class="dot" id="dot-v1-${index}">${currentLabel}</div>
-                                <div class="bus-icon bus-1" id="bus-v1-${index}">
-                                    <div class="pulse-ring" style="background: rgba(59, 130, 246, 0.5);"></div>
-                                    <i class="fas fa-shuttle-van"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="dot-wrapper dw-2" id="dw-v2-${index}">
-                                <div class="dot" id="dot-v2-${index}">${currentLabel}</div>
-                                <div class="bus-icon bus-2" id="bus-v2-${index}">
-                                    <div class="pulse-ring" style="background: rgba(236, 72, 153, 0.5);"></div>
-                                    <i class="fas fa-shuttle-van"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="content">
-                            <h3>${name}</h3>
-                        </div>
-                    </div>
+            stationMetadata.forEach((st, index) => {
+                htmlContent += `
+                    <!-- กลุ่มหมุดสถานีแต่ละจุด -->
+                    <g id="svg-st-group-${index}">
+                        <!-- เส้นผ่านศูนย์กลางวงกลมเหลืองตัวอักษรดำตามภาพ -->
+                        <circle cx="${st.x}" cy="${st.y}" r="8" fill="#facc15" stroke="#0b2447" stroke-width="1.5" />
+                        <text x="${st.x}" y="${st.y + 3}" font-family="'Inter'" font-size="8" font-weight="700" fill="#000000" text-anchor="middle">${st.id}</text>
+                        
+                        <!-- ชื่อข้อความสถานีระบุพิกัดแยกส่วนป้องกันการซ้อนทับ -->
+                        <text x="${st.textX}" y="${st.textY}" id="svg-text-${index}" class="svg-station-text">${st.name}</text>
+                    </g>
                 `;
             });
-            setTimeout(drawGrayRails, 100); 
+            group.innerHTML = htmlContent;
         }
-        renderTimeline();
+        renderVectorStations();
 
-        function setRailPosition(railElement, startDotId, endDotId) {
-            const startEl = document.getElementById(startDotId);
-            const endEl = document.getElementById(endDotId);
-            const containerEl = document.querySelector('.timeline-container');
+        // 4. ฟังก์ชันหลักสำหรับแปลงตำแหน่งพิกเซลจาก SVG ให้กลายเป็นค่าร้อยละ (%) เพื่อสั่งงานกล่อง Bus Layer (HTML Div)
+        function positionBusOnCanvas(busElement, stopIndex) {
+            const coord = stationMetadata[stopIndex];
+            const svgEl = document.getElementById('vector-map');
+            
+            if (coord && busElement && svgEl) {
+                // อ้างอิงจากขนาดช่อง ViewBox [กว้าง 400 x สูง 500] 
+                const pctX = (coord.x / 400) * 100;
+                const pctY = (coord.y / 500) * 100;
 
-            if (startEl && endEl && containerEl) {
-                const containerRect = containerEl.getBoundingClientRect();
-                const startRect = startEl.getBoundingClientRect();
-                const endRect = endEl.getBoundingClientRect();
-
-                const startTop = (startRect.top - containerRect.top) + (startRect.height / 2);
-                const distance = (endRect.top - startRect.top); 
-
-                railElement.style.top = `${startTop}px`;
-                railElement.style.height = `${distance}px`;
+                // ใส่ค่าตำแหน่งลงไป รถจะสไลด์ตัววิ่งไปตามถนนอย่างสวยงาม
+                busElement.style.left = `${pctX}%`;
+                busElement.style.top = `${pctY}%`;
             }
         }
 
-        function drawGrayRails() {
-            const lastIdx = stationNames.length - 1;
-            setRailPosition(document.getElementById('gray-rail-1'), 'dw-v1-0', `dw-v1-${lastIdx}`);
-            setRailPosition(document.getElementById('gray-rail-2'), 'dw-v2-0', `dw-v2-${lastIdx}`);
-        }
-
-        let lastData = { van1: { active: false }, van2: { active: false } };
-
-        function updateState(vanId, data) {
+        // 5. จัดการอัปเดตสถานะ Active และไฮไลต์ข้อความสว่างเรืองแสงเมื่อรถวิ่งมาถึง
+        function updateBusState(vanId, data) {
             const currentStop = data.currentStop || 0;
             const isActive = data.active;
-            const totalStops = stationNames.length;
+            const busDom = document.getElementById(vanId === 'van1' ? 'dom-bus-v1' : 'dom-bus-v2');
             
-            const progressEl = document.getElementById(vanId === 'van1' ? 'prog-rail-1' : 'prog-rail-2');
-            
-            if (isActive && currentStop >= 0) {
-                setRailPosition(progressEl, 
-                    vanId === 'van1' ? 'dw-v1-0' : 'dw-v2-0', 
-                    vanId === 'van1' ? `dw-v1-${currentStop}` : `dw-v2-${currentStop}`
-                );
+            if (isActive && currentStop >= 0 && currentStop < stationMetadata.length) {
+                // คำนวณเคลื่อนที่รถรับส่ง
+                positionBusOnCanvas(busDom, currentStop);
+                busDom.classList.add('active-run');
+
+                // ไฮไลต์ข้อความใน SVG จุดจอดนั้นๆ ให้สว่างขึ้นมาเด่นชัด
+                const textDom = document.getElementById(`svg-text-${currentStop}`);
+                if (textDom) textDom.classList.add('active-target-text');
             } else {
-                progressEl.style.height = '0px';
-            }
-
-            for (let i = 0; i < totalStops; i++) {
-                const dot = document.getElementById(vanId === 'van1' ? `dot-v1-${i}` : `dot-v2-${i}`);
-                const bus = document.getElementById(vanId === 'van1' ? `bus-v1-${i}` : `bus-v2-${i}`);
-                const row = document.getElementById(`row-${i}`);
-                const activeClass = vanId === 'van1' ? 'active-1' : 'active-2';
-
-                dot.classList.remove(activeClass);
-                dot.style.opacity = '1';
-                bus.classList.remove('show');
-
-                if (isActive) {
-                    if (i < currentStop) {
-                        dot.classList.add(activeClass); 
-                    } else if (i === currentStop) {
-                        dot.style.opacity = '0'; 
-                        bus.classList.add('show');
-                        row.classList.add('stop-highlight');
-                    }
-                }
+                busDom.classList.remove('active-run');
             }
         }
 
+        // 6. เชื่อมต่อระบบ Firebase Realtime Stream Data
         db.ref('shuttles').on('value', (snapshot) => {
             const data = snapshot.val();
-            document.querySelectorAll('.stop-item').forEach(el => el.classList.remove('stop-highlight'));
+            
+            // ล้างค่าไฮไลต์เก่าออกก่อนทุกครั้งที่ข้อมูลเปลี่ยน
+            document.querySelectorAll('.svg-station-text').forEach(el => {
+                el.classList.remove('active-target-text');
+            });
 
             if (data) {
-                lastData = data; 
-                if (data.van1) updateState('van1', data.van1);
-                if (data.van2) updateState('van2', data.van2);
+                if (data.van1) updateBusState('van1', data.van1);
+                if (data.van2) updateBusState('van2', data.van2);
             }
         });
-
-        window.addEventListener('resize', () => {
-            drawGrayRails(); 
-            if (lastData.van1) updateState('van1', lastData.van1); 
-            if (lastData.van2) updateState('van2', lastData.van2);
-        });
-
     </script>
 </body>
 </html>
