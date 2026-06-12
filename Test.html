@@ -1,249 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shuttle Tracker V3</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <title>Salaya One - Schematic Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#2563eb", 
-                        "secondary": "#db2777",
-                    },
-                    fontFamily: { "display": ["Inter", "sans-serif"] }
-                }
-            }
-        }
-    </script>
-    
     <style>
-        body { overflow: hidden; }
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        
-        .leaflet-div-icon { background: transparent; border: none; }
-        .leaflet-control-attribution { font-size: 8px; opacity: 0.6; }
-
-        .station-label {
-            background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; 
-            border-radius: 4px; padding: 3px 6px; font-size: 11px; 
-            font-weight: 600; color: #334155; white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .leaflet-tooltip-top:before { display: none; }
+        body { margin: 0; padding: 0; background-color: #0b2240; } /* ใช้พื้นหลังสีน้ำเงินเข้มให้เนียนไปกับภาพ */
+        #map { height: 100vh; width: 100%; }
     </style>
 </head>
-<body class="font-display bg-gray-100 text-slate-900 h-screen w-full flex flex-col relative">
+<body>
 
     <div id="map"></div>
 
-    <div class="absolute inset-0 z-10 flex flex-col justify-end pointer-events-none pb-8 px-4">
-        
-        <div class="absolute top-4 right-4 pointer-events-auto">
-            <button onclick="resetView()" class="bg-white/90 backdrop-blur shadow-lg text-slate-600 rounded-full w-10 h-10 flex items-center justify-center hover:bg-white active:scale-95 transition-all">
-                <span class="material-symbols-outlined">my_location</span>
-            </button>
-        </div>
-
-        <div class="pointer-events-auto">
-            <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden transition-all duration-300" id="infoCard">
-                
-                <div class="px-5 pt-4 pb-4 border-b border-slate-100 flex justify-between items-center cursor-pointer active:bg-slate-50" onclick="toggleInfo()">
-                    <div class="flex items-center gap-2">
-                        <div class="bg-slate-100 p-1.5 rounded-full">
-                            <span class="material-symbols-outlined text-slate-600 text-[20px]">directions_bus</span>
-                        </div>
-                        <h3 class="text-slate-900 font-bold text-lg">
-                            รายชื่อรถรับส่ง
-                        </h3>
-                    </div>
-                    <span id="chevron" class="material-symbols-outlined text-slate-400 text-2xl transition-transform duration-300">expand_less</span>
-                </div>
-                
-                <div id="infoContent" class="flex flex-col transition-all duration-300 ease-in-out origin-top" style="max-height: 500px; opacity: 1;">
-                    
-                    <button onclick="focusVan('van1')" class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b border-slate-50 w-full text-left">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 text-primary flex items-center justify-center text-sm font-bold shadow-sm">1</div>
-                            <div class="flex flex-col items-start">
-                                <span class="text-base font-bold text-slate-800">รถคันสีฟ้า</span>
-                                <span id="status-van1" class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full mt-1">รอสัญญาณ...</span>
-                            </div>
-                        </div>
-                        <div class="text-primary">
-                            <span class="material-symbols-outlined">chevron_right</span>
-                        </div>
-                    </button>
-
-                    <button onclick="focusVan('van2')" class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors w-full text-left">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-pink-100 text-secondary flex items-center justify-center text-sm font-bold shadow-sm">2</div>
-                            <div class="flex flex-col items-start">
-                                <span class="text-base font-bold text-slate-800">รถคันสีชมพู</span>
-                                <span id="status-van2" class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full mt-1">รอสัญญาณ...</span>
-                            </div>
-                        </div>
-                        <div class="text-secondary">
-                            <span class="material-symbols-outlined">chevron_right</span>
-                        </div>
-                    </button>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <script>
-        // 1. Config Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
-            authDomain: "my-apartment-shuttle.firebaseapp.com",
-            databaseURL: "https://my-apartment-shuttle-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "my-apartment-shuttle",
-            storageBucket: "my-apartment-shuttle.firebasestorage.app",
-            messagingSenderId: "808566202899",
-            appId: "1:808566202899:web:5626ae23c0df6335d455e6"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // 2. Map Setup
-        const map = L.map('map', { zoomControl: false }).setView([13.8013075, 100.3118486], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: 'OpenStreetMap'
-        }).addTo(map);
-
-        // --- Custom Marker ---
-        function createCustomMarker(type, label) {
-            const colorClass = type === 'van1' ? 'bg-primary border-primary' : 'bg-secondary border-secondary';
-            const iconName = type === 'van1' ? 'directions_bus' : 'airport_shuttle';
-            
-            const html = `
-                <div class="relative transform transition-transform hover:scale-110">
-                    <div class="bg-white p-1 rounded-full shadow-lg border-2 ${colorClass.split(' ')[1]}">
-                        <div class="${colorClass.split(' ')[0]} text-white p-1.5 rounded-full flex items-center justify-center">
-                            <span class="material-symbols-outlined text-[18px]">${iconName}</span>
-                        </div>
-                    </div>
-                    <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1">
-                        <span class="${colorClass.split(' ')[0]} text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm font-bold">${label}</span>
-                    </div>
-                </div>
-            `;
-            return L.divIcon({
-                className: 'custom-pin',
-                html: html,
-                iconSize: [40, 50],
-                iconAnchor: [20, 25],
-                popupAnchor: [0, -30]
-            });
-        }
-
-        // เส้นทาง (Polyline) ยังมีอยู่ตรงนี้ครับ
-        const vans = {
-            van1: { marker: null, icon: createCustomMarker('van1', '1'), path: L.polyline([], {color: '#2563eb', weight: 4}).addTo(map) },
-            van2: { marker: null, icon: createCustomMarker('van2', '2'), path: L.polyline([], {color: '#db2777', weight: 4}).addTo(map) }
-        };
-
-        // 3. Stations
-        const stations = [
-            { name: "Salaya One Hotel & Serviced Apartment", lat: 13.801307528476485, lng: 100.31184859685465 },//13.801307528476485, 100.31184859685465
-            { name: "1.College of Music", lat: 13.788904728829397, lng: 100.32389069925281 },
-            { name: "2.1 Faculty of Science 3", lat: 13.793003329175068, lng: 100.32209472460619 }, //13.793003329175068, 100.32209472460619
-            { name: "2.2 Faculty of Science 2", lat: 13.792808930787233, lng: 100.3232846273437 }, //13.792808930787233, 100.3232846273437
-            { name: "3. Faculty of Social Sciences and Humanities", lat: 13.792213752692787, lng: 100.32486876253822 }, //13.792213752692787, 100.32486876253822
-            { name: "4. New MUIC Building", lat: 13.790603615089555, lng: 100.32642917272868 },//
-            { name: "5. Old MUIC Building", lat: 13.792825444200497, lng: 100.32604719730193 },//
-            { name: "6. Campus Building", lat: 13.793753432988641, lng: 100.32480465775636 },//13.793753432988641, 100.32480465775636
-            { name: "7. Faculty of Engineering", lat: 13.796311283547787, lng: 100.32491359376786 },//13.796311283547787, 100.32491359376786
-            { name: "8. ICT", lat: 13.7944683388828, lng: 100.32470635179706 },//13.7944683388828, 100.32470635179706
-            { name: "9. Faculty of Medical Technology", lat: 13.797597784507522, lng: 100.3220243967522 },//13.797597784507522, 100.3220243967522
-            { name: "10. Physical and Medical Technology Building", lat: 13.798710641549654, lng: 100.32308905165148 },//13.798710641549654, 100.32308905165148
-            { name: "11. Faculty of Liberal Arts", lat: 13.79728207941215, lng: 100.32091504261966 },//13.79728207941215, 100.32091504261966
-            { name: "12. Electric Mini-Bus", lat: 13.794816858149446, lng: 100.31883868060257 },//13.794816858149446, 100.31883868060257
-            { name: "13. Faculty of Veterinary Science", lat: 13.798234387105726, lng: 100.3177604325669 },//13.798234387105726, 100.3177604325669
-            { name: "14. MUIDS", lat: 13.799975002826338, lng: 100.32363233570953 }//13.799975002826338, 100.32363233570953
-        ];
-
-        stations.forEach(s => {
-            L.circleMarker([s.lat, s.lng], {
-                radius: 4, fillColor: "white", color: "#94a3b8", weight: 2, opacity: 1, fillOpacity: 1
-            }).addTo(map).bindTooltip(s.name, { permanent: true, direction: 'top', className: 'station-label', offset: [0, -5] });
+        // 1. ตั้งค่าแผนที่ให้เป็นระบบรูปภาพ (CRS.Simple) ไม่ใช่แผนที่โลก
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -1,
+            maxZoom: 2,
+            zoomControl: true
         });
 
-        // 4. Firebase Tracking
-        function trackShuttle(id) {
-            db.ref('shuttles/' + id).on('value', (snap) => {
-                const data = snap.val();
-                const v = vans[id];
-                const statusEl = document.getElementById(`status-${id}`);
-                
-                if (data && data.active) {
-                    const pos = [data.lat, data.lng];
-                    if (!v.marker) v.marker = L.marker(pos, {icon: v.icon}).addTo(map);
-                    else v.marker.setLatLng(pos);
-                    
-                    // ลากเส้นตามรถ
-                    v.path.addLatLng(pos);
-                    
-                    statusEl.innerText = "กำลังวิ่ง";
-                    statusEl.className = "text-xs font-bold text-white px-2 py-0.5 rounded-full mt-1 " + (id === 'van1' ? 'bg-primary' : 'bg-secondary');
+        // 2. กำหนดขนาดของรูปภาพ (กว้าง x สูง เป็นพิกเซล)
+        // สมมติว่ารูปภาพของคุณมีขนาด 800 x 1100 พิกเซล
+        const w = 800;
+        const h = 1100;
+        const bounds = [[0, 0], [h, w]];
 
-                } else {
-                    statusEl.innerText = "Offline";
-                    statusEl.className = "text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full mt-1";
-                }
-            });
-        }
-        trackShuttle('van1');
-        trackShuttle('van2');
+        // 3. ใส่รูปภาพแผนที่เส้นทางเข้าไปในระบบ
+        // เปลี่ยน 'shuttle_route.png' เป็น URL รูปภาพของคุณจริง ๆ
+        const image = L.imageOverlay('shuttle_route.png', bounds).addTo(map);
 
-        function focusVan(id) {
-            if (vans[id].marker) map.flyTo(vans[id].marker.getLatLng(), 17, {duration: 1.5});
-            else alert("รถยังไม่ Online ครับ");
-        }
+        // สั่งให้หน้าจอโฟกัสไปที่รูปภาพทั้งหมดพอดี
+        map.fitBounds(bounds);
 
-        function resetView() {
-            map.setView([13.8013075, 100.3118486], 15);
-        }
+        // 4. กำหนดตำแหน่งพิกเซล (Y, X) ของแต่ละสถานีบนรูปภาพ
+        // (คุณต้องลองจิ้มหาพิกัดบนรูปภาพของคุณเองซักครู่หนึ่ง)
+        const stationPixels = {
+            station1: [480, 620],  // สมมติพิกัดจุดที่ 1 (College of Music)
+            station2: [400, 480],  // สมมติพิกัดจุดที่ 2
+            station14: [610, 110]  // สมมติพิกัดจุดที่ 14 (MUIDS)
+        };
 
-        // --- Toggle Info Function ---
-        let isExpanded = true;
-        function toggleInfo() {
-            const content = document.getElementById('infoContent');
-            const chevron = document.getElementById('chevron');
-            
-            if (isExpanded) {
-                // พับเก็บ
-                content.style.maxHeight = '0px';
-                content.style.opacity = '0';
-                content.style.padding = '0'; 
-                chevron.style.transform = 'rotate(180deg)'; 
-            } else {
-                // ขยายออก
-                content.style.maxHeight = '500px';
-                content.style.opacity = '1';
-                chevron.style.transform = 'rotate(0deg)'; 
+        // 5. สร้างไอคอนรถรับส่ง
+        const vanIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png', // ไอคอนรถสีฟ้า
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+
+        // สร้างตัวแปรหมุดรถคันที่ 1 ไว้ที่ตำแหน่งเริ่มต้น (เช่น สถานี 1)
+        const van1Marker = L.marker(stationPixels.station1, { icon: vanIcon }).addTo(map);
+
+
+        // 🔄 6. ตัวอย่างจำลองการทำงานร่วมกับ Firebase
+        // เมื่อดึงพิกัดจริงมาแล้ว แปลงค่าเข้าสู่ระบบภาพอินโฟกราฟิก
+        function updateVanPositionOnImage(currentStationId) {
+            const newPos = stationPixels[currentStationId];
+            if (newPos) {
+                // ใช้ .slideTo() (หากใช้ปลั๊กอิน) หรือ .setLatLng() เพื่อให้รถขยับ
+                van1Marker.setLatLng(newPos); 
             }
-            isExpanded = !isExpanded;
         }
 
-        // Auto Clear Path
-        setInterval(() => {
-            const m = new Date().getMinutes();
-            if (m === 0 || m === 30) { vans.van1.path.setLatLngs([]); vans.van2.path.setLatLngs([]); }
-        }, 60000);
+        // ตัวอย่างการสั่งงาน: ถ้ารถวิ่งไปถึงจุด 14 โค้ดจะย้ายรถไปจุด 14 ทันที
+        // updateVanPositionOnImage('station14');
 
     </script>
 </body>
