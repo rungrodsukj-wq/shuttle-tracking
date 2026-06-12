@@ -2,71 +2,271 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Salaya One - Schematic Tracker</title>
+    <title>Salaya One - Shuttle Service Route</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { margin: 0; padding: 0; background-color: #0b2240; } /* ใช้พื้นหลังสีน้ำเงินเข้มให้เนียนไปกับภาพ */
-        #map { height: 100vh; width: 100%; }
+        :root {
+            --bg-dark-blue: #0b2447; /* สีน้ำเงินเข้มตามภาพโปสเตอร์ */
+            --road-white: #ffffff;
+            --road-dash: #e11d48;    /* เส้นประสีแดง */
+            --station-yellow: #facc15; /* วงกลมเหลือง */
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        body { 
+            margin: 0; padding: 0; 
+            font-family: 'Kanit', sans-serif; 
+            background-color: var(--bg-dark-blue); 
+            overflow: hidden; 
+        }
+        
+        /* เปลี่ยนพื้นหลังของแผนที่ทั้งหมดให้เป็นสีน้ำเงินเข้มตามธีม */
+        #map { 
+            height: 100vh; 
+            width: 100%; 
+            background-color: var(--bg-dark-blue) !important;
+            z-index: 1; 
+        }
+
+        /* --- แบนเนอร์หัวข้อด้านบน (ถอดแบบจากแผ่นป้าย) --- */
+        .map-header {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            text-align: center;
+            padding: 15px 0;
+            color: white;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(11,36,71,1) 70%, rgba(11,36,71,0) 100%);
+            pointer-events: none;
+        }
+        .map-header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
+        .map-header p { margin: 2px 0 0 0; font-size: 13px; color: #93c5fd; opacity: 0.9; }
+
+        /* --- UI PANEL ควบคุมรถ --- */
+        .ui-panel {
+            position: absolute;
+            bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-soft);
+            z-index: 1000;
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-track {
+            border: none; padding: 12px; border-radius: 12px; color: white; cursor: pointer;
+            font-family: 'Kanit', sans-serif; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s;
+        }
+        .btn-track:active { transform: scale(0.95); }
+        .btn-blue { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+        .btn-pink { background: linear-gradient(135deg, #be185d, #f472b6); }
+
+        /* --- สไตล์หมุดสถานี (วงกลมเหลือง + ข้อความขาว) --- */
+        .station-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px !important;
+            margin-left: -60px; /* จัดกึ่งกลางหมุด */
+            margin-top: -30px;
+            text-align: center;
+        }
+        .station-marker-circle {
+            width: 24px; height: 24px;
+            background-color: var(--station-yellow);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #000;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .station-marker-text {
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 400;
+            margin-top: 4px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
+            white-space: normal;
+            width: 130px;
+            line-height: 1.2;
+        }
+
+        /* ซ่อนไอคอนเริ่มต้นของ Leaflet ลิขสิทธิ์ด้านล่าง */
+        .leaflet-control-attribution { display: none !important; }
     </style>
 </head>
 <body>
 
+    <div class="map-header">
+        <h1>SALAYA ONE</h1>
+        <p>Shuttle Service Route</p>
+    </div>
+
+    <div class="ui-panel">
+        <div class="control-grid">
+            <button class="btn-track btn-blue" onclick="focusVan('van1')">🚍 คันที่ 1</button>
+            <button class="btn-track btn-pink" onclick="focusVan('van2')">🚍 คันที่ 2</button>
+        </div>
+    </div>
+
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
-        // 1. ตั้งค่าแผนที่ให้เป็นระบบรูปภาพ (CRS.Simple) ไม่ใช่แผนที่โลก
+        // 1. Config Firebase 
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
+            authDomain: "my-apartment-shuttle.firebaseapp.com",
+            databaseURL: "https://my-apartment-shuttle-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "my-apartment-shuttle",
+            storageBucket: "my-apartment-shuttle.firebasestorage.app",
+            messagingSenderId: "808566202899",
+            appId: "1:808566202899:web:5626ae23c0df6335d455e6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. ตั้งค่าระบบแผนที่แบบกระดานวาดรูปอิสระ (Simple CRS) ไม่ใช้แผนที่โลก
         const map = L.map('map', {
             crs: L.CRS.Simple,
             minZoom: -1,
             maxZoom: 2,
-            zoomControl: true
+            zoomControl: false
         });
 
-        // 2. กำหนดขนาดของรูปภาพ (กว้าง x สูง เป็นพิกเซล)
-        // สมมติว่ารูปภาพของคุณมีขนาด 800 x 1100 พิกเซล
-        const w = 800;
-        const h = 1100;
-        const bounds = [[0, 0], [h, w]];
+        // กำหนดขอบเขตขนาดของกระดานจำลอง (กว้าง 1000 x สูง 800)
+        const mapBounds = [[0, 0], [800, 1000]];
+        map.fitBounds(mapBounds);
 
-        // 3. ใส่รูปภาพแผนที่เส้นทางเข้าไปในระบบ
-        // เปลี่ยน 'shuttle_route.png' เป็น URL รูปภาพของคุณจริง ๆ
-        const image = L.imageOverlay('shuttle_route.png', bounds).addTo(map);
+        // 3. 🛣️ ฟังก์ชันสำหรับสร้างถนน (วาดเส้นขาวหนา แล้วทับด้วยเส้นประแดงบางๆ)
+        function drawRoad(points) {
+            // เส้นพื้นถนนสีขาวด้านล่าง
+            L.polyline(points, {
+                color: '#ffffff',
+                weight: 22,
+                lineCap: 'round',
+                lineJoin: 'round',
+                opacity: 1
+            }).addTo(map);
 
-        // สั่งให้หน้าจอโฟกัสไปที่รูปภาพทั้งหมดพอดี
-        map.fitBounds(bounds);
+            // เส้นประสีแดงตรงกลางถนน
+            L.polyline(points, {
+                color: '#e11d48',
+                weight: 2,
+                dashArray: '6, 8',
+                lineCap: 'butt',
+                lineJoin: 'round',
+                opacity: 1
+            }).addTo(map);
+        }
 
-        // 4. กำหนดตำแหน่งพิกเซล (Y, X) ของแต่ละสถานีบนรูปภาพ
-        // (คุณต้องลองจิ้มหาพิกัดบนรูปภาพของคุณเองซักครู่หนึ่ง)
-        const stationPixels = {
-            station1: [480, 620],  // สมมติพิกัดจุดที่ 1 (College of Music)
-            station2: [400, 480],  // สมมติพิกัดจุดที่ 2
-            station14: [610, 110]  // สมมติพิกัดจุดที่ 14 (MUIDS)
+        // วาดบล็อกโครงข่ายถนนตามโครงสร้างผังในภาพ
+        drawRoad([[430, 900], [430, 680], [350, 680], [350, 580], [620, 580], [620, 830], [720, 830], [720, 540], [540, 540], [540, 430]]); 
+        drawRoad([[540, 430], [620, 430], [620, 290], [480, 290], [480, 430], [180, 430], [180, 120], [480, 120], [480, 220], [620, 220]]);
+        drawRoad([[480, 220], [330, 220], [330, 330], [180, 330]]);
+        drawRoad([[180, 220], [100, 220], [100, 620], [180, 620]]);
+
+        // 4. 📍 ข้อมูลตำแหน่งจำลอง (Y, X) และชื่อของทั้ง 14 สถานี บนผังระบบเวกเตอร์
+        const stations = {
+            "station_main": { id: "★", name: "Salaya One Apartment", pos: [680, 250], realLat: 13.801307, realLng: 100.311848 },
+            "station1":  { id: "1",  name: "College of Music", pos: [470, 750], realLat: 13.788904, realLng: 100.323890 },
+            "station2":  { id: "2",  name: "Faculty of Science", pos: [400, 500], realLat: 13.792808, realLng: 100.323284 },
+            "station3":  { id: "3",  name: "Social Sciences", pos: [480, 500], realLat: 13.792213, realLng: 100.324868 },
+            "station4":  { id: "4",  name: "MUIC Building 2", pos: [670, 750], realLat: 13.790603, realLng: 100.326429 },
+            "station5":  { id: "5",  name: "MUIC Building 1", pos: [670, 480], realLat: 13.792825, realLng: 100.326047 },
+            "station6":  { id: "6",  name: "Campus Building", pos: [670, 350], realLat: 13.793753, realLng: 100.324804 },
+            "station7":  { id: "7",  name: "Faculty of Engineering", pos: [570, 350], realLat: 13.796311, realLng: 100.324913 },
+            "station8":  { id: "8",  name: "ICT Technology", pos: [380, 410], realLat: 13.794468, realLng: 100.324706 },
+            "station9":  { id: "9",  name: "Medical Technology", pos: [400, 160], realLat: 13.797597, realLng: 100.322024 },
+            "station10": { id: "10", name: "Physical & Med Tech", pos: [300, 160], realLat: 13.798710, realLng: 100.323089 },
+            "station11": { id: "11", name: "Faculty of Liberal Arts", pos: [260, 330], realLat: 13.797282, realLng: 100.320915 },
+            "station12": { id: "12", name: "Electric Mini-Bus", pos: [260, 520], realLat: 13.794816, realLng: 100.318838 },
+            "station13": { id: "13", name: "Faculty of Veterinary", pos: [140, 410], realLat: 13.798234, realLng: 100.317760 },
+            "station14": { id: "14", name: "MUIDS โรงเรียนสาธิต", pos: [530, 100], realLat: 13.799975, realLng: 100.323632 }
         };
 
-        // 5. สร้างไอคอนรถรับส่ง
-        const vanIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png', // ไอคอนรถสีฟ้า
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
+        // วาดหมุดสถานีลงบนแผนที่เวกเตอร์
+        Object.keys(stations).forEach(key => {
+            const st = stations[key];
+            const customHtml = `
+                <div class="station-container">
+                    <div class="station-marker-circle">${st.id}</div>
+                    <div class="station-marker-text">${st.name}</div>
+                </div>
+            `;
+            const stationIcon = L.divIcon({ html: customHtml, className: '', iconSize: [0, 0] });
+            L.marker(st.pos, { icon: stationIcon }).addTo(map);
         });
 
-        // สร้างตัวแปรหมุดรถคันที่ 1 ไว้ที่ตำแหน่งเริ่มต้น (เช่น สถานี 1)
-        const van1Marker = L.marker(stationPixels.station1, { icon: vanIcon }).addTo(map);
+        // 5. 🚐 ตั้งค่าระบบตัวรถที่จะวิ่งเคลื่อนไหวบนหน้าจอ
+        const iconBlue = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386405.png', iconSize: [46, 46], iconAnchor: [23, 23] });
+        const iconPink = L.icon({ iconUrl: 'https://cdn-icons-png.freepik.com/512/386/386456.png', iconSize: [46, 46], iconAnchor: [23, 23] });
 
+        const vans = {
+            van1: { marker: null, icon: iconBlue },
+            van2: { marker: null, icon: iconPink }
+        };
 
-        // 🔄 6. ตัวอย่างจำลองการทำงานร่วมกับ Firebase
-        // เมื่อดึงพิกัดจริงมาแล้ว แปลงค่าเข้าสู่ระบบภาพอินโฟกราฟิก
-        function updateVanPositionOnImage(currentStationId) {
-            const newPos = stationPixels[currentStationId];
-            if (newPos) {
-                // ใช้ .slideTo() (หากใช้ปลั๊กอิน) หรือ .setLatLng() เพื่อให้รถขยับ
-                van1Marker.setLatLng(newPos); 
+        function focusVan(id) {
+            if (vans[id].marker) {
+                map.panTo(vans[id].marker.getLatLng());
+            } else {
+                alert("รถคันนี้ยังไม่ส่งสัญญาณเข้าสู่ระบบในผังจำลองครับ");
             }
         }
 
-        // ตัวอย่างการสั่งงาน: ถ้ารถวิ่งไปถึงจุด 14 โค้ดจะย้ายรถไปจุด 14 ทันที
-        // updateVanPositionOnImage('station14');
+        // 🎯 ฟังก์ชันเด็ด: คำนวณหาว่าพิกัด GPS จริงบนโลก อยู่ใกล้สถานีไหนมากที่สุด แล้วดึงรถมาแสดงที่พิกัดบนรูปผังจำลองให้ตรงจุด
+        function getMappedSchematicPosition(realLat, realLng) {
+            let closestStation = null;
+            let minDistance = Infinity;
+
+            Object.keys(stations).forEach(key => {
+                const st = stations[key];
+                // คำนวณระยะห่างแบบง่าย (Euclidean Distance)
+                const dist = Math.sqrt(Math.pow(realLat - st.realLat, 2) + Math.pow(realLng - st.realLng, 2));
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestStation = st;
+                }
+            });
+
+            // คืนค่าตำแหน่ง [Y, X] บนผังจำลองของสถานีที่อยู่ใกล้ตัวรถที่สุด
+            return closestStation ? closestStation.pos : [680, 250];
+        }
+
+        // 🔄 ดึงข้อมูลพิกัด Realtime จาก Firebase มารันบนแผนที่เวกเตอร์แบบไม่ต้องพึ่งรูปภาพ
+        function trackShuttle(id) {
+            db.ref('shuttles/' + id).on('value', (snap) => {
+                const data = snap.val();
+                const v = vans[id];
+
+                if (data && data.active) {
+                    // แปลงค่าพิกัดจริงเข้าสู่ผังกราฟิกจำลอง
+                    const schematicPos = getMappedSchematicPosition(data.lat, data.lng);
+                    
+                    if (!v.marker) {
+                        v.marker = L.marker(schematicPos, { icon: v.icon }).addTo(map);
+                    } else {
+                        v.marker.setLatLng(schematicPos);
+                    }
+                }
+            });
+        }
+
+        trackShuttle('van1');
+        trackShuttle('van2');
 
     </script>
 </body>
