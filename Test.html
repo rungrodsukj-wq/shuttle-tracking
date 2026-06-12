@@ -164,8 +164,8 @@
                     <!-- โครงสร้างถนนโซนกลางและโซนซ้ายสเน็คคดเคี้ยวตามภาพโปสเตอร์ -->
                     <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
                     <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
-                    <!-- ประตู 5 พิเศษโรงเรียนสาธิต MUIDS ด้านซ้าย -->
-                    <path d="M 40 140 L 40 190" stroke-width="12" />
+                    <!-- ประตู 5 และต่อถนนขึ้นไปด้านบนสุดเพื่อรองรับ Salaya One (★) -->
+                    <path d="M 40 85 L 40 190" stroke-width="12" />
                     <path d="M 40 165 L 75 165" stroke-width="3" stroke="#e11d48" />
                 </g>
 
@@ -174,14 +174,14 @@
                     <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 220 110 L 220 150" />
                     <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
                     <path d="M 140 230 L 50 230 L 50 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
-                    <path d="M 40 140 L 40 190" stroke-width="1" />
+                    <path d="M 40 85 L 40 190" stroke-width="1" />
                 </g>
 
                 <!-- 3. วาดข้อความกำกับสถานที่/ประตูต่างๆ บนผังอินโฟกราฟิก -->
                 <g id="decorations">
                     <text x="300" y="245" class="gate-text">≪ ENTRANCE GATE 1</text>
                     <text x="200" y="395" class="gate-text">≪ EXIT GATE 6</text>
-                    <text x="20" y="130" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS)</text>
+                    <text x="20" y="125" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS)</text>
                 </g>
 
                 <!-- 4. ส่วนสร้างหมุดสถานีวงกลมสีเหลืองพร้อมข้อความชื่อจุดจอด -->
@@ -219,9 +219,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. ข้อมูลพิกัด (X, Y) เปอร์เซ็นต์สำหรับกระจายจุดจอดลงบนผัง SVG ให้เหมือนภาพโปสเตอร์ต้นฉบับ
+        // 2. ข้อมูลพิกัด (X, Y) ย้าย Salaya One Apartment (★) ไปไว้ที่ x: 40, y: 95 (ด้านบน Gate 5) เรียบร้อย
         const stationMetadata = [
-            { id: "★", x: 310, y: 200, name: "Salaya One Apartment", textX: 250, textY: 185 },
+            { id: "★", x: 40,  y: 95,  name: "Salaya One Apartment", textX: 20,  textY: 75 },
             { id: "1",  x: 250, y: 200, name: "College of Music", textX: 215, textY: 215 },
             { id: "2",  x: 220, y: 150, name: "Faculty of Science", textX: 235, textY: 153 },
             { id: "3",  x: 220, y: 125, name: "Faculty of Social Sciences", textX: 235, textY: 128 },
@@ -235,7 +235,7 @@
             { id: "11", x: 130, y: 310, name: "Faculty of Liberal Arts", textX: 65,  textY: 325 },
             { id: "12", x: 190, y: 340, name: "Electric Mini-Bus", textX: 160, textY: 358 },
             { id: "13", x: 170, y: 420, name: "Faculty of Veterinary", textX: 135, textY: 440 },
-            { id: "14", x: 40,  y: 165, name: "MUIDS โรงเรียนสาธิต", textX: 20,  textY: 205 }
+            { id: "14", x: 40,  y: 165, name: "MUIDS โรงเรียนสาธิต", textX: 20,  textY: 200 }
         ];
 
         // 3. ฟังก์ชันเรนเดอร์หมุดวงกลมสีเหลืองและข้อความลงใน SVG บอร์ดแบบไดนามิก
