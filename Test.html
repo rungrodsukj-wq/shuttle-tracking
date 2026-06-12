@@ -3,189 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salaya One - Premium Schematic Tracker</title>
+    <title>Salaya One - Shuttle Service Route</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-dark: #051329;        /* สีกรมท่ามืดลึกพื้นหลัง */
-            --map-bg: #0b2447;         /* สีกรมท่าสว่างตามแผ่นป้ายหลัก */
-            --station-yellow: #facc15; /* สีเหลืองสว่างตามหมุดในภาพ */
+            --bg-gradient-top: #3a7bd5;
+            --bg-gradient-bot: #1a3a8f;
+            --map-bg: #1a3a8f;
+            --map-inner: #1e4db7;
+            --station-yellow: #d4e857;
             --road-white: #ffffff;
-            --road-dash: #e11d48;      /* เส้นประสีแดงตรงกลางถนน */
-            --s1-color: #3B82F6;       /* สีรถคันที่ 1 (ฟ้า) */
-            --s2-color: #EC4899;       /* สีรถคันที่ 2 (ชมพู) */
+            --road-dash: #e11d48;
+            --s1-color: #3B82F6;
+            --s2-color: #EC4899;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Inter', 'Kanit', sans-serif;
-            background-color: var(--bg-dark);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: linear-gradient(160deg, var(--bg-gradient-top) 0%, var(--bg-gradient-bot) 100%);
             min-height: 100vh;
-            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
         }
 
-        /* กล่องการ์ดหลักดีไซน์ตามกรอบแผ่นป้ายในภาพ */
+        /* Title */
+        .page-title {
+            color: #ffffff;
+            font-size: clamp(22px, 5vw, 36px);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-align: center;
+            padding: 12px 0 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Map outer card */
         .map-card {
             background: var(--map-bg);
             width: 100%;
-            max-width: 500px;
-            border-radius: 28px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-            padding: 20px;
+            max-width: 560px;
+            border-radius: 22px;
+            border: 2px solid rgba(255,255,255,0.25);
+            padding: 14px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             position: relative;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-sizing: border-box;
         }
 
-        /* ส่วนหัวข้อแบนเนอร์ */
-        .map-header {
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 10px;
-        }
-        .map-header h2 { margin: 0; font-size: 22px; color: #ffffff; font-weight: 700; letter-spacing: 0.5px; }
-        .map-header p { margin: 3px 0 0 0; font-size: 11px; color: var(--station-yellow); letter-spacing: 1px; font-weight: 500; }
-
-        /* ตัวบ่งชี้สถานะรถ */
+        /* Legend bar */
         .legend-bar {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 18px;
             font-size: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 6px;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
             color: #fff;
         }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-weight: 600; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+        .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
 
-        /* --- ผังแผนที่ระบบเวกเตอร์ (SVG Container) --- */
         .map-canvas-wrapper {
             position: relative;
             width: 100%;
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 18px;
+            border-radius: 16px;
             overflow: visible;
         }
 
-        svg {
-            width: 100%;
-            height: auto;
-            display: block;
-            overflow: visible;
-        }
+        svg { width: 100%; height: auto; display: block; overflow: visible; }
 
-        /* ข้อความป้ายสถานีในแผนที่ */
-        .svg-station-text {
-            font-family: 'Kanit', sans-serif;
-            font-size: 10px;
-            fill: rgba(255, 255, 255, 0.85);
+        /* Station texts */
+        .st-label {
+            font-family: 'Kanit', 'Inter', sans-serif;
+            font-size: 9.5px;
+            fill: rgba(255,255,255,0.9);
             font-weight: 400;
-            transition: all 0.3s;
+        }
+        .st-label-bold {
+            font-family: 'Kanit', 'Inter', sans-serif;
+            font-size: 9px;
+            fill: rgba(255,255,255,0.75);
+            font-weight: 400;
         }
         .active-target-text {
             fill: #ffffff !important;
-            font-weight: 600 !important;
-            font-size: 11px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+            font-weight: 700 !important;
         }
 
-        /* ตกแต่งตัวอักษรเกทประตูและข้อความพิเศษ */
-        .gate-text {
+        /* Gate / special texts */
+        .gate-yellow {
             font-family: 'Kanit', sans-serif;
-            font-size: 9px;
-            font-weight: 600;
-            fill: #60a5fa;
+            font-size: 11px;
+            font-weight: 700;
+            fill: var(--station-yellow);
+        }
+        .gate-white {
+            font-family: 'Kanit', sans-serif;
+            font-size: 10px;
+            font-weight: 400;
+            fill: #ffffff;
+        }
+        .gate-arrow {
+            font-family: 'Kanit', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            fill: var(--station-yellow);
+        }
+        .entrance-text {
+            font-family: 'Kanit', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            fill: var(--station-yellow);
+        }
+        .salaya-brand {
+            font-family: 'Kanit', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            fill: var(--station-yellow);
         }
 
-        /* --- 🚐 ไอคอนรถรับส่งแบบเคลื่อนที่สมูท --- */
+        /* Bus icons */
         .bus-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
         }
-
         .shuttle-bus {
             position: absolute;
-            width: 30px; height: 30px;
+            width: 28px; height: 28px;
             border-radius: 50%;
             color: white;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             z-index: 100;
             opacity: 0;
             transform: translate(-50%, -50%) scale(0);
-            /* สั่งให้รถวิ่งขยับตามโค้งถนนอย่างสมูทนุ่มนวล */
-            transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1), top 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s;
+            transition: left 0.8s cubic-bezier(0.25,1,0.5,1), top 0.8s cubic-bezier(0.25,1,0.5,1), transform 0.4s;
         }
         .shuttle-bus.active-run { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        
-        .bus-v1 { background: var(--s1-color); box-shadow: 0 0 15px var(--s1-color); }
-        .bus-v2 { background: var(--s2-color); box-shadow: 0 0 15px var(--s2-color); }
-
+        .bus-v1 { background: var(--s1-color); box-shadow: 0 0 14px var(--s1-color); }
+        .bus-v2 { background: var(--s2-color); box-shadow: 0 0 14px var(--s2-color); }
         .pulse-ring {
             position: absolute; width: 100%; height: 100%; border-radius: 50%;
             animation: busGlow 2s infinite; z-index: -1;
         }
-        @keyframes busGlow { 
-            0% { transform: scale(1); opacity: 0.6; } 
-            100% { transform: scale(2.2); opacity: 0; } 
+        @keyframes busGlow {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(2.2); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="map-card">
-        <div class="map-header">
-            <h2>SALAYA ONE</h2>
-            <p>Shuttle Service Route</p>
-        </div>
+    <div class="page-title">Shuttle Service Route</div>
 
+    <div class="map-card">
         <div class="legend-bar">
-            <div class="legend-item"><div class="legend-dot" style="background: var(--s1-color);"></div> Shuttle 1</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--s2-color);"></div> Shuttle 2</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--s1-color)"></div> Shuttle 1</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--s2-color)"></div> Shuttle 2</div>
         </div>
 
         <div class="map-canvas-wrapper">
-            <svg viewBox="0 0 400 500" id="vector-map">
-                <g id="road-base-layer" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 40 110 L 40 80" />
-                    <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
-                    <path d="M 140 230 L 40 230 L 40 150" />
-                    <path d="M 40 230 L 40 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
+            <!--
+            SVG viewBox: 0 0 520 620
+            Road layout traced from the image:
+            - Top horizontal loop at top right
+            - Vertical spine going down on left side (~x=155)
+            - Cross sections matching the image
+            - Bottom section going down to Gate 6 / Vet
+            -->
+            <svg viewBox="0 0 520 640" id="vector-map">
+
+                <!-- ===== BACKGROUND INNER PANEL ===== -->
+                <rect x="8" y="8" width="504" height="624" rx="14" ry="14"
+                      fill="#1e4db7" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+
+                <!-- ===== ROAD BASE LAYER (white thick roads) ===== -->
+                <g fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- TOP LOOP: top-right rectangle -->
+                    <!-- Top horizontal: from right edge going left, turning corners -->
+                    <path d="M 490 105 L 350 105 L 350 65 L 210 65 L 210 105"/>
+                    <!-- Right vertical of loop -->
+                    <path d="M 490 105 L 490 200 L 430 200"/>
+                    <!-- Bottom of loop back in -->
+                    <path d="M 350 105 L 350 200 L 430 200"/>
+
+                    <!-- MAIN horizontal spine through middle -->
+                    <!-- From Gate5/MUIDS area (left) going right -->
+                    <path d="M 80 200 L 210 200"/>
+                    <!-- Connect junction at 210,200 upward to 210,105 (already done) -->
+                    <!-- Going right from 210,200 towards entrance gate area -->
+                    <path d="M 210 200 L 350 200"/>
+
+                    <!-- VERTICAL LEFT SPINE going down -->
+                    <path d="M 155 200 L 155 330"/>
+                    <!-- left inner box -->
+                    <path d="M 80 270 L 155 270"/>
+                    <path d="M 80 200 L 80 330 L 155 330"/>
+
+                    <!-- Bottom section: from 155,330 going right to 310,330 then down to 310,410 then left to 155,410 then down to 155,500 -->
+                    <path d="M 155 330 L 310 330 L 310 410 L 155 410 L 155 510"/>
+
+                    <!-- Exit/Vet bottom: horizontal going right from ~x=155 at y=510 to x=350 -->
+                    <path d="M 155 510 L 350 510"/>
+                    <!-- Vet station at bottom center -->
+
+                    <!-- Gate 5 / MUIDS vertical stub left -->
+                    <path d="M 80 200 L 80 155 L 35 155"/>
+                    <path d="M 35 155 L 35 200"/>
+
                 </g>
 
-                <g id="road-dash-layer" fill="none" stroke="#e11d48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4, 5">
-                    <path d="M 370 230 L 290 230 L 290 200 L 220 200 L 220 160 L 370 160 L 370 110 L 40 110 L 40 80" />
-                    <path d="M 220 160 L 140 160 L 140 230 L 200 230 L 200 290 L 140 290 L 140 260" />
-                    <path d="M 140 230 L 40 230 L 40 150" />
-                    <path d="M 40 230 L 40 290 L 130 290 L 130 340 L 260 340 L 260 380 L 130 380 L 130 420" />
+                <!-- ===== ROAD DASHED CENTER LINE (red dashes) ===== -->
+                <g fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-dasharray="5,6">
+                    <path d="M 490 105 L 350 105 L 350 65 L 210 65 L 210 105"/>
+                    <path d="M 490 105 L 490 200 L 430 200"/>
+                    <path d="M 350 105 L 350 200 L 430 200"/>
+                    <path d="M 80 200 L 210 200"/>
+                    <path d="M 210 200 L 350 200"/>
+                    <path d="M 155 200 L 155 330"/>
+                    <path d="M 80 270 L 155 270"/>
+                    <path d="M 80 200 L 80 330 L 155 330"/>
+                    <path d="M 155 330 L 310 330 L 310 410 L 155 410 L 155 510"/>
+                    <path d="M 155 510 L 350 510"/>
+                    <path d="M 80 200 L 80 155 L 35 155"/>
+                    <path d="M 35 155 L 35 200"/>
                 </g>
 
-                <g id="decorations">
-                    <text x="300" y="245" class="gate-text">≪ ENTRANCE GATE 1</text>
-                    <text x="200" y="395" class="gate-text">≪ EXIT GATE 6</text>
-                    <text x="60" y="145" class="gate-text" style="fill:#facc15;">Gate 5 (MUIDS Area)</text>
+                <!-- ===== DECORATIVE TREES / BUILDINGS (light blue icons) ===== -->
+                <!-- Trees scattered around the map matching image -->
+                <g fill="rgba(100,160,255,0.35)" font-size="18" font-family="serif">
+                    <!-- Top area trees -->
+                    <text x="268" y="55">🌳</text>
+                    <text x="408" y="55">🌳</text>
+                    <!-- Left side trees -->
+                    <text x="30" y="325">🌳</text>
+                    <text x="88" y="425">🌳</text>
+                    <!-- Bottom area -->
+                    <text x="358" y="490">🌳</text>
+                </g>
+                <!-- Building icons -->
+                <g font-size="20" font-family="serif" fill="rgba(150,190,255,0.5)">
+                    <text x="462" y="68">🏢</text>
+                    <text x="388" y="148">🏢</text>
+                    <text x="60" y="365">🏢</text>
+                    <text x="60" y="405">🏢</text>
+                    <text x="215" y="285">🏢</text>
+                    <text x="440" y="260">🏛</text>
                 </g>
 
-                <g id="stations-group"></g>
+                <!-- ===== GATE 5 / MUIDS SECTION (left side) ===== -->
+                <!-- Special shuttle pill -->
+                <rect x="18" y="120" width="30" height="70" rx="15" ry="15" fill="white"/>
+                <!-- Red dot on pill -->
+                <circle cx="33" cy="158" r="5" fill="#e11d48"/>
+                <!-- Gate 5 texts -->
+                <text x="55" y="126" class="gate-yellow">Gate 5</text>
+                <text x="55" y="140" class="gate-white" font-size="8.5">Mahidol Wittayanusorn School</text>
+                <text x="55" y="153" class="gate-white" font-size="8">Special Shuttle</text>
+                <text x="55" y="164" class="gate-white" font-size="8">07:00AM</text>
+
+                <!-- Station 14 MUIDS -->
+                <circle cx="35" cy="200" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="35" y="204" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">14</text>
+                <text x="52" y="202" class="st-label" font-size="9.5">MUIDS</text>
+
+                <!-- ===== STATIONS GROUP ===== -->
+                <g id="stations-group">
+
+                <!-- Station ★ Salaya One — not on road, shown as source label top-left -->
+                <!-- We'll put it differently per user request: bottom-right -->
+
+                <!-- Station 6 - Campus Building -->
+                <circle cx="210" cy="105" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="210" y="109" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">6</text>
+                <text x="185" y="88" class="st-label" text-anchor="middle">Campus</text>
+                <text x="185" y="99" class="st-label" text-anchor="middle">Building</text>
+
+                <!-- Station 5 - MUIC Building 1 -->
+                <circle cx="285" cy="105" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="285" y="109" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">5</text>
+                <text x="285" y="88" class="st-label" text-anchor="middle">MUIC Building 1</text>
+
+                <!-- Station 4 - MUIC Building 2 (right side) -->
+                <circle cx="490" cy="155" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="490" y="159" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">4</text>
+                <text x="505" y="152" class="st-label" font-size="9">MUIC</text>
+                <text x="505" y="163" class="st-label" font-size="9">Bldg 2</text>
+
+                <!-- Station 1 - College of Music (right, middle) -->
+                <circle cx="430" cy="200" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="430" y="204" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">1</text>
+                <text x="445" y="197" class="st-label" font-size="9">College</text>
+                <text x="445" y="208" class="st-label" font-size="9">of Music</text>
+
+                <!-- Station 7 - Faculty of Engineering -->
+                <circle cx="155" cy="155" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="155" y="159" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">7</text>
+                <text x="168" y="153" class="st-label" font-size="9">Faculty of</text>
+                <text x="168" y="164" class="st-label" font-size="9">Engineering</text>
+
+                <!-- Station 3 - Faculty of Social Sciences -->
+                <circle cx="250" cy="155" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="250" y="159" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">3</text>
+                <text x="265" y="148" class="st-label" font-size="8.5">Faculty of Social</text>
+                <text x="265" y="159" class="st-label" font-size="8.5">Sciences &amp; Humanities</text>
+
+                <!-- Station 2 - Faculty of Science -->
+                <circle cx="250" cy="200" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="250" y="204" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">2</text>
+                <text x="265" y="197" class="st-label" font-size="9">Faculty of</text>
+                <text x="265" y="208" class="st-label" font-size="9">Science</text>
+
+                <!-- Station 8 - ICT / Information Tech -->
+                <circle cx="250" cy="270" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="250" y="274" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">8</text>
+                <text x="265" y="260" class="st-label" font-size="8.5">Information and</text>
+                <text x="265" y="271" class="st-label" font-size="8.5">Communication</text>
+                <text x="265" y="282" class="st-label" font-size="8.5">Technology</text>
+
+                <!-- Station 9 - Faculty of Medical Tech -->
+                <circle cx="80" cy="255" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="80" y="259" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">9</text>
+                <text x="93" y="250" class="st-label" font-size="8.5">Faculty of</text>
+                <text x="93" y="261" class="st-label" font-size="8.5">Medical Tech</text>
+
+                <!-- Station 10 - Physical & Med Tech Building -->
+                <circle cx="80" cy="295" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="80" y="299" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">10</text>
+                <text x="93" y="290" class="st-label" font-size="8">Physical and Medical</text>
+                <text x="93" y="301" class="st-label" font-size="8">Technology Building</text>
+
+                <!-- Station 11 - Faculty of Liberal Arts -->
+                <circle cx="155" cy="370" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="155" y="374" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">11</text>
+                <text x="168" y="368" class="st-label" font-size="9">Faculty of</text>
+                <text x="168" y="379" class="st-label" font-size="9">Liberal Arts</text>
+
+                <!-- Station 12 - Electric Mini-Bus -->
+                <circle cx="255" cy="370" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="255" y="374" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">12</text>
+                <text x="270" y="363" class="st-label" font-size="9">🚌 Electric</text>
+                <text x="270" y="374" class="st-label" font-size="9">Mini-Bus</text>
+
+                <!-- Station 13 - Faculty of Veterinary Science (bottom) -->
+                <circle cx="255" cy="510" r="11" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="2"/>
+                <text x="255" y="514" font-family="Inter" font-size="9" font-weight="700" fill="#000" text-anchor="middle">13</text>
+                <text x="270" y="507" class="st-label" font-size="9">Faculty of</text>
+                <text x="270" y="518" class="st-label" font-size="9">Veterinary Science</text>
+
+                </g>
+
+                <!-- ===== ENTRANCE / EXIT GATE LABELS ===== -->
+                <!-- ENTRANCE GATE 1 - right side -->
+                <text x="340" y="228" class="gate-arrow">«« ENTRANCE GATE 1</text>
+                <!-- Temple icon below entrance gate text -->
+                <text x="352" y="248" font-size="18">🏛</text>
+
+                <!-- EXIT GATE 6 - bottom left area -->
+                <text x="155" y="468" class="gate-arrow" text-anchor="middle">«« EXIT GATE 6</text>
+                <!-- Left arrow on exit road -->
+                <text x="145" y="512" font-family="sans-serif" font-size="20" fill="#e11d48" font-weight="900">←</text>
+
+                <!-- ===== SALAYA ONE BRANDING - bottom right ===== -->
+                <rect x="348" y="548" width="148" height="70" rx="12" ry="12"
+                      fill="rgba(0,0,0,0.35)" stroke="var(--station-yellow)" stroke-width="1.5"/>
+                <!-- Star icon -->
+                <circle cx="370" cy="574" r="10" fill="var(--station-yellow)" stroke="#1a3a8f" stroke-width="1.5"/>
+                <text x="370" y="578" font-family="Inter" font-size="10" font-weight="700" fill="#000" text-anchor="middle">★</text>
+                <!-- Text -->
+                <text x="385" y="568" class="salaya-brand" font-size="14">SALAYA ONE</text>
+                <text x="385" y="583" class="gate-white" font-size="8.5">Apartment</text>
+                <text x="358" y="604" class="gate-white" font-size="8">Shuttle Service Start Point</text>
+
             </svg>
 
+            <!-- Bus HTML Layer -->
             <div class="bus-layer">
                 <div class="shuttle-bus bus-v1" id="dom-bus-v1">
-                    <div class="pulse-ring" style="background: rgba(59, 130, 246, 0.4);"></div>
+                    <div class="pulse-ring" style="background:rgba(59,130,246,0.4)"></div>
                     <i class="fas fa-shuttle-van"></i>
                 </div>
                 <div class="shuttle-bus bus-v2" id="dom-bus-v2">
-                    <div class="pulse-ring" style="background: rgba(236, 72, 153, 0.4);"></div>
+                    <div class="pulse-ring" style="background:rgba(236,72,153,0.4)"></div>
                     <i class="fas fa-shuttle-van"></i>
                 </div>
             </div>
@@ -196,7 +404,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // 1. กำหนดค่าเชื่อมต่อ Firebase (เหมือนชุดเดิมทุกประการ)
         const firebaseConfig = {
             apiKey: "AIzaSyBL4nhltSeXZTtgShoqgvWG4tcyb92XOzw",
             authDomain: "my-apartment-shuttle.firebaseapp.com",
@@ -209,81 +416,50 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. ข้อมูลพิกัด (X, Y) จัดตำแหน่งหมุดฝั่งซ้ายใหม่ให้สัมพันธ์กับถนนที่แยกขาดจากกัน
+        // Station coordinates mapped to SVG viewBox 520x640
         const stationMetadata = [
-            { id: "★", x: 40,  y: 95,  name: "Salaya One Apartment", textX: 60,  textY: 100 },
-            { id: "1",  x: 250, y: 200, name: "College of Music", textX: 215, textY: 215 },
-            { id: "2",  x: 220, y: 150, name: "Faculty of Science", textX: 235, textY: 153 },
-            { id: "3",  x: 220, y: 125, name: "Faculty of Social Sciences", textX: 235, textY: 128 },
-            { id: "4",  x: 350, y: 160, name: "MUIC Building 2", textX: 300, textY: 175 },
-            { id: "5",  x: 290, y: 110, name: "MUIC Building 1", textX: 265, textY: 98 },
-            { id: "6",  x: 240, y: 110, name: "Campus Building", textX: 215, textY: 98 },
-            { id: "7",  x: 170, y: 160, name: "Faculty of Engineering", textX: 125, textY: 150 },
-            { id: "8",  x: 170, y: 230, name: "ICT Technology", textX: 175, textY: 245 },
-            { id: "9",  x: 90,  y: 230, name: "Faculty of Medical Tech", textX: 90,  textY: 215 },
-            { id: "10", x: 40,  y: 260, name: "Physical & Med Tech", textX: 60,  textY: 264 },
-            { id: "11", x: 130, y: 310, name: "Faculty of Liberal Arts", textX: 145, textY: 314 },
-            { id: "12", x: 190, y: 340, name: "Electric Mini-Bus", textX: 160, textY: 358 },
-            { id: "13", x: 170, y: 420, name: "Faculty of Veterinary", textX: 135, textY: 440 },
-            { id: "14", x: 40,  y: 170, name: "MUIDS โรงเรียนสาธิต", textX: 60,  textY: 174 }
+            { id: "★",  x: 370, y: 574, name: "Salaya One Apartment" },   // 0
+            { id: "1",  x: 430, y: 200, name: "College of Music" },         // 1
+            { id: "2",  x: 250, y: 200, name: "Faculty of Science" },       // 2
+            { id: "3",  x: 250, y: 155, name: "Faculty of Social Sciences" },// 3
+            { id: "4",  x: 490, y: 155, name: "MUIC Building 2" },          // 4
+            { id: "5",  x: 285, y: 105, name: "MUIC Building 1" },          // 5
+            { id: "6",  x: 210, y: 105, name: "Campus Building" },          // 6
+            { id: "7",  x: 155, y: 155, name: "Faculty of Engineering" },   // 7
+            { id: "8",  x: 250, y: 270, name: "ICT Technology" },           // 8
+            { id: "9",  x: 80,  y: 255, name: "Faculty of Medical Tech" },  // 9
+            { id: "10", x: 80,  y: 295, name: "Physical & Med Tech Building" }, // 10
+            { id: "11", x: 155, y: 370, name: "Faculty of Liberal Arts" },  // 11
+            { id: "12", x: 255, y: 370, name: "Electric Mini-Bus" },        // 12
+            { id: "13", x: 255, y: 510, name: "Faculty of Veterinary Science" }, // 13
+            { id: "14", x: 35,  y: 200, name: "MUIDS" }                     // 14
         ];
 
-        // 3. ฟังก์ชันเรนเดอร์หมุดวงกลมสีเหลืองและข้อความลงใน SVG
-        function renderVectorStations() {
-            const group = document.getElementById('stations-group');
-            let htmlContent = '';
-
-            stationMetadata.forEach((st, index) => {
-                htmlContent += `
-                    <g id="svg-st-group-${index}">
-                        <circle cx="${st.x}" cy="${st.y}" r="8" fill="#facc15" stroke="#0b2447" stroke-width="1.5" />
-                        <text x="${st.x}" y="${st.y + 3}" font-family="'Inter'" font-size="8" font-weight="700" fill="#000000" text-anchor="middle">${st.id}</text>
-                        <text x="${st.textX}" y="${st.textY}" id="svg-text-${index}" class="svg-station-text">${st.name}</text>
-                    </g>
-                `;
-            });
-            group.innerHTML = htmlContent;
-        }
-        renderVectorStations();
-
-        // 4. ฟังก์ชันสำหรับคำนวณตำแหน่งและเคลื่อนย้ายรถใน HTML Layer
         function positionBusOnCanvas(busElement, stopIndex) {
             const coord = stationMetadata[stopIndex];
             const svgEl = document.getElementById('vector-map');
-            
             if (coord && busElement && svgEl) {
-                const pctX = (coord.x / 400) * 100;
-                const pctY = (coord.y / 500) * 100;
+                const pctX = (coord.x / 520) * 100;
+                const pctY = (coord.y / 640) * 100;
                 busElement.style.left = `${pctX}%`;
-                busElement.style.top = `${pctY}%`;
+                busElement.style.top  = `${pctY}%`;
             }
         }
 
-        // 5. จัดการอัปเดตสถานะ Active และไฮไลต์ข้อความสว่างเรืองแสง
         function updateBusState(vanId, data) {
             const currentStop = data.currentStop || 0;
             const isActive = data.active;
             const busDom = document.getElementById(vanId === 'van1' ? 'dom-bus-v1' : 'dom-bus-v2');
-            
             if (isActive && currentStop >= 0 && currentStop < stationMetadata.length) {
                 positionBusOnCanvas(busDom, currentStop);
                 busDom.classList.add('active-run');
-
-                const textDom = document.getElementById(`svg-text-${currentStop}`);
-                if (textDom) textDom.classList.add('active-target-text');
             } else {
                 busDom.classList.remove('active-run');
             }
         }
 
-        // 6. ดึงข้อมูลจาก Firebase Realtime Database
         db.ref('shuttles').on('value', (snapshot) => {
             const data = snapshot.val();
-            
-            document.querySelectorAll('.svg-station-text').forEach(el => {
-                el.classList.remove('active-target-text');
-            });
-
             if (data) {
                 if (data.van1) updateBusState('van1', data.van1);
                 if (data.van2) updateBusState('van2', data.van2);
